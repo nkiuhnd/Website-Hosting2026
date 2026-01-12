@@ -229,7 +229,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
 // Delete Project
 router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const user = req.user!;
 
     const project = await prisma.project.findFirst({

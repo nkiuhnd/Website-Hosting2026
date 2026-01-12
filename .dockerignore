@@ -1,0 +1,53 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+client/dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database
+server/prisma/*.db
+server/prisma/*.db-journal
+
+# Uploads and temporary files
+server/uploads/*
+!server/uploads/.gitkeep
+server/temp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+.trae/
+
+# Docker related
+.dockerignore
+Dockerfile
+.docker/
+
+# Git related
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# Misc
+*.zip
+*.tar.gz
+*.rar

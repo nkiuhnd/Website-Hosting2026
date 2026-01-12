@@ -65,6 +65,68 @@ npx prisma db push
 2. 启动后端: `cd server && npm run start`
 3. 访问: `http://localhost:4000`
 
+## 🐳 Docker 部署
+
+### 1. 确保 Docker 和 Docker Compose 已安装
+请确保你的系统已安装 Docker 和 Docker Compose。你可以通过以下命令检查：
+```bash
+docker --version
+docker-compose --version
+```
+
+### 2. 配置环境变量
+在 `server` 目录下创建 `.env` 文件（如果尚未创建）：
+```env
+PORT=4000
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="your_secret_key"
+ADMIN_USERNAME="admin"
+ADMIN_PASSWORD="your_secure_password"
+```
+
+### 3. 使用 Docker Compose 构建和启动服务
+
+**构建并启动服务：**
+```bash
+docker-compose up --build -d
+```
+
+- `--build`: 重新构建镜像
+- `-d`: 后台运行容器
+
+**查看运行状态：**
+```bash
+docker-compose ps
+```
+
+**查看日志：**
+```bash
+docker-compose logs -f
+```
+
+**停止服务：**
+```bash
+docker-compose down
+```
+
+**重启服务：**
+```bash
+docker-compose restart
+```
+
+### 4. 访问应用
+服务启动后，你可以通过以下地址访问应用：
+```
+http://localhost:4000
+```
+
+### 5. Docker 部署说明
+
+- 应用数据会持久化存储在 `server/prisma` 和 `server/uploads` 目录中
+- 首次启动时会自动初始化数据库
+- 默认使用 Node.js 20.19.4 版本
+- 支持通过修改 `docker-compose.yml` 中的端口映射来更改访问端口
+
 ## 🔒 内容审查与安全说明
 
 为了防止平台被用于诈骗（Phishing）：

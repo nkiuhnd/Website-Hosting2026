@@ -8,5 +8,8 @@
     "build:server": "cd server && npm run build",
     "build": "npm run build:client && npm run build:server",
     "start": "cd server && npm start"
+  },
+  "prisma": {
+    "schema": "server/prisma/schema.prisma"
   }
 }

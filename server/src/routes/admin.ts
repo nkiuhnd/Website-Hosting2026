@@ -125,7 +125,7 @@ router.get('/users', async (req: Request, res: Response) => {
 // Toggle User Status (Ban/Unban)
 router.patch('/users/:id/status', async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params as { id: string };
         const { status } = req.body; // ACTIVE or BANNED
 
         const existing = await prisma.user.findUnique({ where: { id } });
@@ -191,7 +191,7 @@ router.get('/projects', async (req: Request, res: Response) => {
 // Toggle Project Status (Disable/Enable)
 router.patch('/projects/:id/status', async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params as { id: string };
         const { status } = req.body; // ACTIVE or DISABLED
 
         const existing = await prisma.project.findUnique({ where: { id } });
@@ -209,7 +209,7 @@ router.patch('/projects/:id/status', async (req: Request, res: Response) => {
 
 router.delete('/users/:id', async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params as { id: string };
         const user = await prisma.user.findUnique({ where: { id } });
         if (!user) return res.status(404).json({ message: 'User not found' });
         if (user.role === 'ADMIN') return res.status(400).json({ message: 'Cannot delete admin user' });
@@ -244,7 +244,7 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
 
 router.patch('/users/:id/reset-password', async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params as { id: string };
         const { newPassword } = req.body;
         if (!newPassword) return res.status(400).json({ message: 'newPassword is required' });
         const user = await prisma.user.findUnique({ where: { id } });

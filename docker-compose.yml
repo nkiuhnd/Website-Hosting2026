@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  web-hosting-platform:
+    build: .
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./server/prisma/dev_v2.db:/app/server/prisma/dev_v2.db
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
