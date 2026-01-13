@@ -15,7 +15,7 @@ client/dist/
 .env.*.local
 
 # Database
-server/prisma/*.db
+
 server/prisma/*.db-journal
 
 # Uploads and temporary files

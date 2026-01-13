@@ -47,8 +47,9 @@ RUN npm run build
 FROM base AS production
 WORKDIR /app
 
-# 复制服务器的依赖文件
+# 复制服务器的依赖文件和环境变量文件
 COPY server/package*.json ./server/
+COPY server/.env ./server/
 
 # 安装系统依赖（仅保留必要的）和生产环境依赖
 RUN apk add --no-cache libc6-compat openssl && \
