@@ -26,21 +26,38 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const recoveryCodeHash = recoveryCode ? await bcrypt.hash(String(recoveryCode), 10) : null;
 
+    // 使用单次创建操作替代先创建后更新，避免潜在的竞态条件
     const user = await prisma.user.create({
       data: {
         username,
         password: hashedPassword,
+        phone,
+        recoveryCodeHash
       },
-    });
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { phone, recoveryCodeHash } as any
     });
 
     res.status(201).json({ message: 'User created successfully', userId: user.id });
-  } catch (error) {
-    console.error(error);
-    res.status(400).json({ message: 'User already exists or error creating user' });
+  } catch (error: any) {
+    console.error('Registration error details:', error);
+    
+    // 根据错误类型返回具体信息
+    if (error.code === 'P2002') {
+      // 唯一约束冲突
+      if (error.meta?.target?.includes('username')) {
+        return res.status(400).json({ message: 'Username already exists' });
+      } else if (error.meta?.target?.includes('phone')) {
+        return res.status(400).json({ message: 'Phone already registered' });
+      }
+      return res.status(400).json({ message: 'Username or phone already exists' });
+    } else if (error.code === 'P2025') {
+      return res.status(404).json({ message: 'Database record not found' });
+    } else if (error.code.startsWith('E')) {
+      // Node.js 系统错误
+      return res.status(500).json({ message: 'System error occurred', error: error.message });
+    }
+    
+    // 其他未知错误
+    res.status(500).json({ message: 'Error creating user', error: error.message });
   }
 });
 

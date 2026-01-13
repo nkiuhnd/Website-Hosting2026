@@ -14,8 +14,8 @@ WORKDIR /app/client
 # 复制客户端依赖文件
 COPY client/package*.json ./
 
-# 安装依赖（使用 npm 镜像加速下载）
-RUN npm install --registry=https://registry.npmmirror.com
+# 安装依赖（使用 npm 镜像加速下载，增加超时时间）
+RUN npm install --registry=https://registry.npmmirror.com --timeout=120000
 
 # 复制客户端源代码
 COPY client/ ./
@@ -32,7 +32,7 @@ COPY server/package*.json ./
 
 # 安装系统依赖和依赖（包括开发依赖）
 RUN apk add --no-cache libc6-compat openssl && \
-    npm install --registry=https://registry.npmmirror.com
+    npm install --registry=https://registry.npmmirror.com --timeout=120000
 
 # 复制服务器源代码
 COPY server/ ./
@@ -52,7 +52,7 @@ COPY server/package*.json ./server/
 
 # 安装系统依赖（仅保留必要的）和生产环境依赖
 RUN apk add --no-cache libc6-compat openssl && \
-    cd server && npm install --only=production --ignore-scripts --registry=https://registry.npmmirror.com && \
+    cd server && npm install --only=production --ignore-scripts --registry=https://registry.npmmirror.com --timeout=120000 && \
     npm prune --production
 
 # 复制构建好的服务器代码
