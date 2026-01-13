@@ -10,7 +10,7 @@ build/
 client/dist/
 
 # Environment variables
-.env
+
 .env.local
 .env.*.local
 
