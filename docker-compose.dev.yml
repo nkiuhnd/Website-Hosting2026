@@ -17,3 +17,23 @@ services:
     working_dir: /app
     command: bash -c "cd /app/server && npm install --registry=https://registry.npmmirror.com && npx prisma generate && npm run dev & sleep 2 && cd /app/client && npm install --registry=https://registry.npmmirror.com && npm run dev"
     restart: on-failure
+    networks:
+      - web-network
+  
+  # Nginx 服务配置
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"  # 映射80端口到本地
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf  # 挂载nginx配置文件
+    depends_on:
+      - web-hosting-platform
+    restart: unless-stopped
+    networks:
+      - web-network
+
+# 网络配置
+networks:
+  web-network:
+    driver: bridge

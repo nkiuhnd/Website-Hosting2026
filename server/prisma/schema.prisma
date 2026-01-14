@@ -26,6 +26,7 @@ model User {
   createdAt           DateTime  @default(now())
   projects            Project[]
   loginLogs           LoginLog[]
+  messages            Message[]
 }
 
 model LoginLog {
@@ -51,6 +52,38 @@ model Project {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  versions    ProjectVersion[]
+  visitLogs   VisitLog[]
 
   @@unique([userId, name])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  content   String
+  read      Boolean  @default(false)
+  type      String   @default("system") // system, private
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProjectVersion {
+  id          Int      @id @default(autoincrement())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  path        String
+  version     Int
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model VisitLog {
+  id        Int      @id @default(autoincrement())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
 }

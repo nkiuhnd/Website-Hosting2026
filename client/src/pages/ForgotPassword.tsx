@@ -1,61 +1,96 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import api from '../api';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { sendResetCode, resetPassword } from '../api/auth';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { AxiosError } from 'axios';
 
-interface ForgotPasswordForm {
-  phone: string;
-  recoveryCode: string;
-  newPassword: string;
-}
-
-export default function ForgotPassword() {
-  const { register, handleSubmit, formState: { errors }, getValues } = useForm<ForgotPasswordForm>();
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [username, setUsername] = useState<string | null>(null);
+const ForgotPassword = () => {
   const navigate = useNavigate();
 
-  const lookupUsername = async () => {
-    setError('');
-    setSuccess('');
+  const [formData, setFormData] = useState({
+    phone: '',
+    code: '',
+    newPassword: ''
+  });
+
+  const [countdown, setCountdown] = useState(0);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 清理倒计时
+  useEffect(() => {
+    return () => {
+    };
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setErrorMsg('');
+    setSuccessMsg('');
+  };
+
+  const handleSendCode = async () => {
+    const { phone } = formData;
+    
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      setErrorMsg('请输入正确的中国大陆手机号');
+      return;
+    }
+    
+    if (countdown > 0) return;
+
     try {
-      const phone = getValues('phone');
-      if (!phone) {
-        setError('请输入手机号');
-        return;
-      }
-      const res = await api.get('/auth/lookup-username', { params: { phone } });
-      setUsername(res.data.username);
-    } catch (err: unknown) {
-      const data = (err as { response?: { data?: unknown } } | null | undefined)?.response?.data;
-      const rawMessage = (data && typeof data === 'object' && 'message' in data)
-        ? (data as { message?: unknown }).message
-        : undefined;
-      const message = typeof rawMessage === 'string' ? rawMessage : undefined;
-      setError(message || '查询失败');
+      await sendResetCode(phone);
+      setSuccessMsg('验证码已发送，有效期5分钟');
+      setCountdown(60);
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string; error?: string }>;
+      setErrorMsg(error.response?.data?.message || error.response?.data?.error || '验证码发送失败，请稍后重试');
     }
   };
 
-  const onSubmit = async (data: ForgotPasswordForm) => {
-    setError('');
-    setSuccess('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { phone, code, newPassword } = formData;
+
+    if (!phone || !code || !newPassword) {
+      setErrorMsg('请完善所有必填项');
+      return;
+    }
+    if (code.length !== 6) {
+      setErrorMsg('验证码为6位数字');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setErrorMsg('新密码至少6个字符');
+      return;
+    }
+    if (isSubmitting) return;
+
     try {
-      await api.post('/auth/forgot', {
-        phone: data.phone,
-        recoveryCode: data.recoveryCode,
-        newPassword: data.newPassword
-      });
-      setSuccess('密码重置成功，请使用新密码登录');
-      setTimeout(() => navigate('/login'), 1500);
-    } catch (err: unknown) {
-      const data = (err as { response?: { data?: unknown } } | null | undefined)?.response?.data;
-      const rawMessage = (data && typeof data === 'object' && 'message' in data)
-        ? (data as { message?: unknown }).message
-        : undefined;
-      const message = typeof rawMessage === 'string' ? rawMessage : undefined;
-      setError(message || '重置失败');
+      setIsSubmitting(true);
+      await resetPassword(phone, code, newPassword);
+      setSuccessMsg('密码重置成功，即将跳转登录...');
+      // 延迟跳转，让用户看到成功提示
+      setTimeout(() => {
+        navigate('/login', { state: { success: true, msg: '密码重置成功，请登录' } });
+      }, 2000);
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string; error?: string }>;
+      setErrorMsg(error.response?.data?.message || error.response?.data?.error || '密码重置失败，请稍后重试');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -64,59 +99,99 @@ export default function ForgotPassword() {
       <div className="absolute top-4 right-4">
         <LanguageSwitcher />
       </div>
-      <div className="bg-white p-8 rounded shadow-md w-96">
-        <h2 className="text-2xl font-bold mb-6 text-center">找回密码</h2>
-        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
-        {success && <p className="text-green-600 mb-4 text-center">{success}</p>}
-        {!username && (
-        <div>
-          <div className="mb-4">
-            <label className="block mb-1 font-medium">手机号</label>
-            <input
-              {...register('phone', { required: true })}
-              className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.phone && <span className="text-red-500 text-sm">必填项</span>}
+      
+      <div className="bg-white p-8 rounded shadow-md w-96 max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">找回密码</h2>
+        
+        {errorMsg && (
+          <div className="mb-4 p-2 bg-red-50 text-red-600 rounded text-center text-sm">
+            {errorMsg}
           </div>
-          <button
-            onClick={lookupUsername}
-            className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition"
-          >
-            查询用户名
-          </button>
-        </div>
         )}
-        {username && (
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
-          <div className="mb-2 text-sm text-gray-600">
-            确认账户名：<span className="font-semibold text-gray-900">{username}</span>
+        
+        {successMsg && (
+          <div className="mb-4 p-2 bg-green-50 text-green-600 rounded text-center text-sm">
+            {successMsg}
           </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          {/* 手机号 */}
           <div className="mb-4">
-            <label className="block mb-1 font-medium">恢复 PIN</label>
+            <label className="block text-gray-700 mb-1 font-medium" htmlFor="phone">
+              注册手机号
+            </label>
             <input
-              {...register('recoveryCode', { required: true })}
-              className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="tel"
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="请输入注册时的手机号"
+              maxLength={11}
             />
-            {errors.recoveryCode && <span className="text-red-500 text-sm">必填项</span>}
           </div>
+
+          {/* 验证码 */}
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-1 font-medium" htmlFor="code">
+              验证码
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                id="code"
+                name="code"
+                value={formData.code}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="6位验证码"
+                maxLength={6}
+              />
+              <button
+                type="button"
+                onClick={handleSendCode}
+                disabled={countdown > 0}
+                className="px-3 py-2 bg-blue-600 text-white text-sm rounded disabled:bg-gray-400 hover:bg-blue-700 transition-colors whitespace-nowrap"
+              >
+                {countdown > 0 ? `${countdown}s` : '获取验证码'}
+              </button>
+            </div>
+          </div>
+
+          {/* 新密码 */}
           <div className="mb-6">
-            <label className="block mb-1 font-medium">新密码</label>
+            <label className="block text-gray-700 mb-1 font-medium" htmlFor="newPassword">
+              新密码
+            </label>
             <input
               type="password"
-              {...register('newPassword', { required: true })}
-              className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              id="newPassword"
+              name="newPassword"
+              value={formData.newPassword}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="至少6个字符"
             />
-            {errors.newPassword && <span className="text-red-500 text-sm">必填项</span>}
           </div>
-          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition">
-            提交
+
+          {/* 提交按钮 */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium disabled:opacity-70"
+          >
+            {isSubmitting ? '重置中...' : '确认重置密码'}
           </button>
         </form>
-        )}
-        <p className="mt-4 text-center text-sm">
-          <Link to="/login" className="text-blue-600 hover:underline">返回登录</Link>
-        </p>
+
+        <div className="mt-4 text-center text-sm text-gray-600">
+          记得密码了？ <Link to="/login" className="text-blue-600 hover:underline">立即登录</Link>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default ForgotPassword;

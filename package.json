@@ -11,5 +11,10 @@
   },
   "prisma": {
     "schema": "server/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@alicloud/dypnsapi20170525": "^2.0.0",
+    "dotenv": "^17.2.3",
+    "ioredis": "^5.9.1"
   }
 }

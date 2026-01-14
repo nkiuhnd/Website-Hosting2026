@@ -6,6 +6,7 @@ WebHost 是一个基于 React + Express + Prisma 开发的轻量级静态网页�
 
 - **🚀 单端口架构**：前后端通过同一个端口（默认 4000）提供服务，完美支持 cpolar 等内网穿透工具。
 - **🛡️ 网页防下载保护**：动态注入保护脚本，禁止网页在 `file://` 协议下本地运行，防止内容被直接盗用。
+- **📱 短信认证集成**：支持手机号注册、登录及短信找回密码，安全便捷（基于阿里云 SMS）。
 - **🔍 自动内容审查**：内置敏感词扫描，自动阻断疑似诈骗/钓鱼页面的上传与发布。
 - **🔗 反盗链机制**：内置 Referer 校验中间件，防止静态资源被第三方网站恶意调用。
 - **📂 智能解压与分发**：支持 ZIP 压缩包上传，自动识别入口文件（index.html），并自动处理 GBK 编码兼容。
@@ -16,7 +17,8 @@ WebHost 是一个基于 React + Express + Prisma 开发的轻量级静态网页�
 
 - **前端**: React, Tailwind CSS, Lucide React, Axios
 - **后端**: Node.js, Express, Prisma (SQLite)
-- **安全**: JWT 认证, 路径穿越保护, 动态脚本注入, 内容关键词扫描
+- **安全**: JWT 认证, 路径穿越保护, 动态脚本注入, 内容关键词扫描, 阿里云短信服务
+- **数据存储**: SQLite (数据), Redis (短信验证码缓存)
 
 ## 📦 快速开始
 
@@ -26,18 +28,7 @@ git clone https://github.com/nkiuhnd/Website-Hosting.git
 cd Website-Hosting
 ```
 
-### 2. 安装依赖
-```bash
-# 安装后端依赖
-cd server
-npm install
-
-# 安装前端依赖
-cd ../client
-npm install
-```
-
-### 3. 配置环境
+### 2. 配置环境
 在 `server` 目录下创建 `.env` 文件：
 ```env
 PORT=4000
@@ -45,137 +36,61 @@ DATABASE_URL="file:./dev.db"
 JWT_SECRET="your_secret_key"
 ADMIN_USERNAME="admin"
 ADMIN_PASSWORD="your_secure_password"
+
+# 阿里云短信配置 (必须配置)
+ALIYUN_ACCESS_KEY_ID="your_access_key_id"
+ALIYUN_ACCESS_KEY_SECRET="your_access_key_secret"
+ALIYUN_SMS_SIGN_NAME="your_sign_name"
+ALIYUN_SMS_TEMPLATE_CODE="your_template_code" # 验证码模板ID
+
+# Redis 配置 (用于短信验证码缓存)
+REDIS_HOST="redis" # 如果使用 docker-compose，这里填 redis 服务名；本地开发填 localhost
+REDIS_PORT=6379
 ```
 
-### 4. 初始化数据库
+### 3. Docker 部署 (推荐)
+
+本项目支持通过 Docker Compose 一键启动，分为开发模式和生产模式。
+
+#### 3.1 启动生产环境 (Stable)
+适用于正式部署。
+
 ```bash
-cd server
-npx prisma generate
-npx prisma db push
+docker-compose up --build -d
 ```
 
-### 5. 启动服务
+访问地址: `http://localhost:4000`
 
-**开发模式 (双端口):**
-- 后端: `cd server && npm run dev` (http://localhost:4000)
-- 前端: `cd client && npm run dev` (http://localhost:5173)
+#### 3.2 启动开发环境 (Dev)
+适用于开发调试，支持代码热重载。
 
-**生产模式 (单端口部署):**
-1. 构建前端: `cd client && npm run build`
-2. 启动后端: `cd server && npm run start`
-3. 访问: `http://localhost:4000`
-
-## 🐳 Docker 部署
-
-### 1. 确保 Docker 和 Docker Compose 已安装
-请确保你的系统已安装 Docker 和 Docker Compose。你可以通过以下命令检查：
-```bash
-docker --version
-docker-compose --version
-```
-
-### 2. 配置环境变量
-在 `server` 目录下创建 `.env` 文件（如果尚未创建）：
-```env
-PORT=4000
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="your_secret_key"
-ADMIN_USERNAME="admin"
-ADMIN_PASSWORD="your_secure_password"
-```
-
-### 3. Docker 启动方式
-
-#### 3.1 开发环境（支持代码热重载）
-
-开发环境支持代码热重载，无需每次更改代码都重新构建镜像。
-
-**启动开发环境：**
 ```bash
 docker-compose -f docker-compose.dev.yml up --build
 ```
 
-**特点：**
-- 挂载源代码目录到容器中，代码更改会自动触发热重载
-- 同时启动服务器和客户端的开发服务器
-- 服务器运行在端口 4000，客户端运行在端口 5173
-- 自动安装依赖并生成 Prisma 客户端
+访问地址:
+- 前端: `http://localhost:5173`
+- 后端: `http://localhost:4000`
 
-**代码更改时：**
-由于源代码目录已经挂载到容器中，您只需要修改本地代码，更改会自动同步到容器中并触发热重载，无需重新构建镜像或重启容器。
+### 4. 本地手动启动 (Legacy)
 
-#### 3.2 生产环境（注重稳定性和性能）
+如果不使用 Docker，请确保本地已安装 Node.js, Redis 和 SQLite。
 
-生产环境会进行完整的构建过程，包括客户端和服务器的构建。
+1. **安装后端依赖并启动**:
+   ```bash
+   cd server
+   npm install
+   npx prisma generate
+   npx prisma db push
+   npm run dev
+   ```
 
-**启动生产环境：**
-```bash
-docker-compose up --build -d
-```
-
-**特点：**
-- 使用多阶段构建来减小镜像大小
-- 只包含必要的生产环境依赖
-- 代码已经构建完成，运行速度更快
-- 以后台模式运行（使用 `-d` 参数）
-
-**代码更改时：**
-当您修改代码后，需要重新构建镜像并启动容器：
-```bash
-docker-compose up --build -d
-```
-
-这个命令会：
-1. 重新构建镜像（使用最新的代码）
-2. 停止并删除旧容器
-3. 使用新镜像启动新容器
-
-### 4. 其他有用的 Docker 命令
-
-#### 停止容器：
-```bash
-# 开发环境
-docker-compose -f docker-compose.dev.yml stop
-
-# 生产环境
-docker-compose stop
-```
-
-#### 查看日志：
-```bash
-# 开发环境
-docker-compose -f docker-compose.dev.yml logs -f
-
-# 生产环境
-docker-compose logs -f
-```
-
-#### 重启容器：
-```bash
-# 开发环境
-docker-compose -f docker-compose.dev.yml restart
-
-# 生产环境
-docker-compose restart
-```
-
-#### 查看运行状态：
-```bash
-docker-compose ps
-```
-
-### 4. 访问应用
-服务启动后，你可以通过以下地址访问应用：
-```
-http://localhost:4000
-```
-
-### 5. Docker 部署说明
-
-- 应用数据会持久化存储在 `server/prisma` 和 `server/uploads` 目录中
-- 首次启动时会自动初始化数据库
-- 默认使用 Node.js 20.19.4 版本
-- 支持通过修改 `docker-compose.yml` 中的端口映射来更改访问端口
+2. **安装前端依赖并启动**:
+   ```bash
+   cd client
+   npm install
+   npm run dev
+   ```
 
 ## 🔒 内容审查与安全说明
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import { Eye, EyeOff, ExternalLink, Search, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
@@ -36,7 +36,7 @@ export default function AdminProjects() {
   const userIdFilter = searchParams.get('userId');
   const { t } = useTranslation();
 
-  const fetchProjects = () => {
+  const fetchProjects = useCallback(() => {
     api.get('/admin/projects', {
       params: {
         search,
@@ -45,14 +45,14 @@ export default function AdminProjects() {
         order: sortConfig.direction
       }
     }).then(res => setProjects(res.data)).catch(console.error);
-  };
+  }, [search, userIdFilter, sortConfig]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchProjects();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [search, userIdFilter, sortConfig]);
+  }, [fetchProjects]);
 
   const toggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';

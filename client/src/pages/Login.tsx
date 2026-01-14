@@ -33,6 +33,7 @@ export default function Login() {
         ? (data as { message?: unknown }).message
         : undefined;
       const message = typeof rawMessage === 'string' ? rawMessage : undefined;
+      // 优先显示后端返回的中文错误信息，如果没有则使用默认翻译
       setError(message || t('login.login_failed'));
     }
   };
@@ -71,7 +72,7 @@ export default function Login() {
           {t('login.no_account')} <Link to="/register" className="text-blue-600 hover:underline">{t('common.register')}</Link>
         </p>
         <p className="mt-2 text-center text-sm">
-          忘记密码？<Link to="/forgot" className="text-blue-600 hover:underline">通过手机号+PIN找回</Link>
+          忘记密码？<Link to="/forgot" className="text-blue-600 hover:underline">通过短信验证码找回</Link>
         </p>
       </div>
     </div>

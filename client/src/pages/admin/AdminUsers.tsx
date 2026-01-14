@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '../../api';
 import { Ban, CheckCircle, Search, ArrowUpDown, ArrowUp, ArrowDown, FolderOpen, Trash2, KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -38,7 +38,7 @@ export default function AdminUsers() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const fetchUsers = () => {
+  const fetchUsers = useCallback(() => {
     api.get('/admin/users', {
       params: {
         search,
@@ -46,14 +46,14 @@ export default function AdminUsers() {
         order: sortConfig.direction
       }
     }).then(res => setUsers(res.data)).catch(console.error);
-  };
+  }, [search, sortConfig]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchUsers();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [search, sortConfig]);
+  }, [fetchUsers]);
 
   const toggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'ACTIVE' ? 'BANNED' : 'ACTIVE';

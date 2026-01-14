@@ -71,10 +71,7 @@ COPY --from=client-builder /app/client/dist ./client/dist
 WORKDIR /app/server
 
 # 安装 Prisma CLI（用于运行迁移等操作）
-RUN npm install -g prisma
-
-# 生成 Prisma 客户端（确保客户端被正确初始化）
-RUN npx prisma generate
+RUN npm install -g prisma --registry=https://registry.npmmirror.com
 
 # 暴露端口
 EXPOSE 4000

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 应用服务
   web-hosting-platform:
@@ -8,6 +6,8 @@ services:
       - ./server/prisma/dev_v2.db:/app/server/prisma/dev_v2.db
     environment:
       - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     restart: unless-stopped
     networks:
       - web-network
@@ -26,6 +26,21 @@ services:
     restart: unless-stopped
     networks:
       - web-network
+
+  # Redis 服务 (用于短信验证码、限流、缓存)
+  redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - web-network
+
+volumes:
+  redis_data:
 
 networks:
   web-network:

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import api from '../api';
 import { useAuth } from '../context/useAuth';
@@ -35,7 +35,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState('');
   const { t } = useTranslation();
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const res = await api.get('/projects', {
         params: { search }
@@ -44,14 +44,14 @@ export default function Dashboard() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [search]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchProjects();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [search]);
+  }, [search, fetchProjects]);
 
   const toggleViewMode = (mode: 'grid' | 'list') => {
     setViewMode(mode);
