@@ -1,7 +1,7 @@
 services:
   # 应用服务
   web-hosting-platform:
-    build: .
+    image: hanshuai23/web-hosting-platform:latest
     volumes:
       - ./server/prisma/dev_v2.db:/app/server/prisma/dev_v2.db
     environment:
