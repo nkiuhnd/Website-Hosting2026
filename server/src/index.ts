@@ -57,7 +57,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Hosting Route Helper
 const serveProjectFile = async (username: string, projectName: string, filePath: string, res: Response) => {
   try {
     const user = await prisma.user.findUnique({ where: { username } });
@@ -147,7 +146,6 @@ const serveProjectFile = async (username: string, projectName: string, filePath:
   }
 };
 
-// Handle /sites/:username/:projectName/* (Serve specific file)
 app.use('/sites/:username/:projectName', async (req, res, next) => {
     if (req.method !== 'GET') return next();
 
@@ -184,6 +182,40 @@ app.use('/sites/:username/:projectName', async (req, res, next) => {
     console.log(`[Request] Project: ${req.params.projectName}, Path: ${req.path}, Decoded: ${decodedPath}, FilePath: ${filePath}`);
     
     await serveProjectFile(req.params.username, req.params.projectName, filePath, res);
+});
+
+app.use('/:projectName', async (req, res, next) => {
+    if (req.method !== 'GET') return next();
+    const hostHeader = req.get('host') || '';
+    const hostname = hostHeader.split(':')[0];
+    const parts = hostname.split('.');
+    if (parts.length < 3) return next();
+    const username = parts[0];
+    const projectName = req.params.projectName;
+    if (!username || !projectName) return next();
+    if (projectName === 'api' || projectName === 'sites') return next();
+    if (req.path === '/' && !req.originalUrl.split('?')[0].endsWith('/')) {
+        return res.redirect(req.originalUrl + '/');
+    }
+    if (req.path === '/') {
+        try {
+            const user = await prisma.user.findUnique({ where: { username } });
+            if (user) {
+                const project = await prisma.project.findFirst({
+                    where: { userId: user.id, name: projectName }
+                });
+                if (project && project.entryFile && project.entryFile !== 'index.html') {
+                    return res.redirect(req.originalUrl + project.entryFile);
+                }
+            }
+        } catch (e) {
+            console.error('Error finding project entry (subdomain):', e);
+        }
+    }
+    const decodedPath = decodeURIComponent(req.path);
+    const filePath = decodedPath === '/' ? 'index.html' : decodedPath.substring(1);
+    console.log(`[Request] Subdomain user: ${username}, Project: ${projectName}, Path: ${req.path}, Decoded: ${decodedPath}, FilePath: ${filePath}`);
+    await serveProjectFile(username, projectName, filePath, res);
 });
 
 // Serve React Frontend

@@ -26,6 +26,33 @@ const uploadMiddleware = (req: AuthRequest, res: Response, next: any) => {
   });
 };
 
+const buildSiteUrl = (baseUrl: string, username: string, projectName: string, entryFile?: string | null) => {
+  const trimmedBase = baseUrl.replace(/\/$/, '');
+  const entrySuffix = entryFile && entryFile !== 'index.html'
+    ? '/' + String(entryFile).split('/').map(encodeURIComponent).join('/')
+    : '';
+  let urlObj: URL;
+  try {
+    urlObj = new URL(trimmedBase);
+  } catch {
+    return `${trimmedBase}/sites/${encodeURIComponent(username)}/${encodeURIComponent(projectName)}${entrySuffix}`;
+  }
+  const hostname = urlObj.hostname;
+  const protocol = urlObj.protocol;
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+  const isIp = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname);
+  if (isLocalhost || isIp) {
+    return `${trimmedBase}/sites/${encodeURIComponent(username)}/${encodeURIComponent(projectName)}${entrySuffix}`;
+  }
+  const parts = hostname.split('.');
+  if (parts.length < 2) {
+    return `${trimmedBase}/sites/${encodeURIComponent(username)}/${encodeURIComponent(projectName)}${entrySuffix}`;
+  }
+  const rootDomain = parts.slice(-2).join('.');
+  const siteBase = `${protocol}//${encodeURIComponent(username)}.${rootDomain}`;
+  return `${siteBase}/${encodeURIComponent(projectName)}${entrySuffix}`;
+};
+
 // Create Project & Upload
 router.post('/', authenticateToken, uploadMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -176,10 +203,7 @@ router.post('/', authenticateToken, uploadMiddleware, async (req: AuthRequest, r
     });
 
     const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host') || 'localhost'}`).replace(/\/$/, '');
-    const entrySuffix = project.entryFile && project.entryFile !== 'index.html'
-      ? '/' + project.entryFile.split('/').map(encodeURIComponent).join('/')
-      : '';
-    const siteUrl = `${baseUrl}/sites/${encodeURIComponent(req.user!.username)}/${encodeURIComponent(project.name)}${entrySuffix}`;
+    const siteUrl = buildSiteUrl(baseUrl, req.user!.username, project.name, project.entryFile);
 
     res.status(201).json({ ...project, siteUrl });
   } catch (error) {
@@ -214,10 +238,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     });
     const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host') || 'localhost'}`).replace(/\/$/, '');
     const projectsWithUrl = projects.map((p) => {
-      const entrySuffix = p.entryFile && p.entryFile !== 'index.html'
-        ? '/' + p.entryFile.split('/').map(encodeURIComponent).join('/')
-        : '';
-      const siteUrl = `${baseUrl}/sites/${encodeURIComponent(user.username)}/${encodeURIComponent(p.name)}${entrySuffix}`;
+      const siteUrl = buildSiteUrl(baseUrl, user.username, p.name, p.entryFile);
       return { ...p, siteUrl };
     });
     res.json(projectsWithUrl);
