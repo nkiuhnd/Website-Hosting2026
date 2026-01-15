@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs-extra';
 import morgan from 'morgan';
+import iconv from 'iconv-lite';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import adminRoutes from './routes/admin';
@@ -101,11 +102,15 @@ const serveProjectFile = async (username: string, projectName: string, filePath:
 
     // Inject Protection Script for HTML files
     if (absolutePath.endsWith('.html')) {
-        let content = await fs.readFile(absolutePath, 'utf-8');
+        const buf = await fs.readFile(absolutePath);
+        const head = buf.slice(0, Math.min(buf.length, 4096)).toString('latin1');
+        const m = head.match(/charset\s*=\s*([a-zA-Z0-9_-]+)/i);
+        let enc = (m ? m[1].toLowerCase() : 'utf-8');
+        if (enc === 'gb2312') enc = 'gb18030';
+        if (enc === 'x-gbk' || enc === 'gbk') enc = 'gb18030';
+        if (enc === 'utf8') enc = 'utf-8';
+        let content = iconv.decode(buf, enc);
         
-        // Anti-download / Anti-local-run script
-        // 1. Block file:// protocol
-        // 2. Optional: Block localhost/127.0.0.1 in production if needed (commented out for now to allow local dev)
         const protectionScript = `
         <script>
         (function() {
@@ -127,7 +132,37 @@ const serveProjectFile = async (username: string, projectName: string, filePath:
         </script>
         `;
 
-        // Insert before </head> or <body>
+        const metaNoTranslate = `<meta name="google" content="notranslate">`;
+        if (!/name\s*=\s*["']?google["']?\s+content\s*=\s*["']?notranslate["']?/i.test(content)) {
+            if (content.includes('</head>')) {
+                content = content.replace('</head>', `${metaNoTranslate}</head>`);
+            } else {
+                content = metaNoTranslate + content;
+            }
+        }
+
+        content = content.replace(/<html([^>]*)>/i, (m, attrs) => {
+            let a = attrs;
+            if (!/translate\s*=/i.test(a)) a += ' translate="no"';
+            if (/class\s*=\s*["']([^"']*)["']/i.test(a)) {
+                a = a.replace(/class\s*=\s*["']([^"']*)["']/i, (mm: string, cls: string) => `class="${cls} notranslate"`);
+            } else {
+                a += ' class="notranslate"';
+            }
+            return `<html${a}>`;
+        });
+
+        content = content.replace(/<body([^>]*)>/i, (m, attrs) => {
+            let a = attrs;
+            if (!/translate\s*=/i.test(a)) a += ' translate="no"';
+            if (/class\s*=\s*["']([^"']*)["']/i.test(a)) {
+                a = a.replace(/class\s*=\s*["']([^"']*)["']/i, (mm: string, cls: string) => `class="${cls} notranslate"`);
+            } else {
+                a += ' class="notranslate"';
+            }
+            return `<body${a}>`;
+        });
+
         if (content.includes('</head>')) {
             content = content.replace('</head>', `${protectionScript}</head>`);
         } else if (content.includes('<body>')) {
@@ -136,6 +171,9 @@ const serveProjectFile = async (username: string, projectName: string, filePath:
             content = protectionScript + content;
         }
 
+        content = content.replace(/(<meta[^>]*charset\s*=\s*)(["']?)[^"'>]+(\2)/i, '$1utf-8');
+        content = content.replace(/(<meta[^>]*charset\s*=\s*)[^"'>]+/i, '$1utf-8');
+        res.set('Content-Type', 'text/html; charset=utf-8');
         return res.send(content);
     }
 
