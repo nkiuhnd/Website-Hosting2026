@@ -193,7 +193,7 @@ app.use('/:projectName', async (req, res, next) => {
     const username = parts[0];
     const projectName = req.params.projectName;
     if (!username || !projectName) return next();
-    if (projectName === 'api' || projectName === 'sites') return next();
+    if (projectName === 'api' || projectName === 'sites' || projectName === 'assets' || projectName === 'favicon.ico') return next();
     if (req.path === '/' && !req.originalUrl.split('?')[0].endsWith('/')) {
         return res.redirect(req.originalUrl + '/');
     }
@@ -239,4 +239,5 @@ if (fs.existsSync(clientBuildPath)) {
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log('Version: 2026-01-15-Fixed-Assets');
 });

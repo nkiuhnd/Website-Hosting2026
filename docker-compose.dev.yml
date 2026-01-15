@@ -4,18 +4,27 @@ services:
   web-hosting-platform:
     build:
       context: .
-      target: base  # 使用基础镜像，不进行完整构建
+      # 使用 server-builder 阶段，这样有环境，但我们会覆盖 CMD
+      target: server-builder 
     ports:
       - "4000:4000"
-      - "5173:5173"  # 用于客户端开发服务器
     volumes:
-      - ./server:/app/server  # 挂载服务器代码
-      - ./client:/app/client  # 挂载客户端代码
-      - ./server/prisma/dev_v2.db:/app/server/prisma/dev_v2.db  # 挂载数据库文件
+      - ./server/src:/app/server/src  # 挂载源码，支持后端热重载
+      - ./server/.env:/app/server/.env
+      - ./server/prisma:/app/server/prisma
+      # 关键：挂载本地构建好的前端 dist，模拟生产环境
+      - ./client/dist:/app/client/dist 
     environment:
       - NODE_ENV=development
-    working_dir: /app
-    command: bash -c "cd /app/server && npm install --registry=https://registry.npmmirror.com && npx prisma generate && npm run dev & sleep 2 && cd /app/client && npm install --registry=https://registry.npmmirror.com && npm run dev"
+      # 覆盖 .env 里的 Redis 配置，指向 docker 服务名
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # 让 nodemon 监听 ts 文件变化
+    working_dir: /app/server
+    # 安装依赖（利用缓存）并启动后端开发模式
+    # 注意：这里假设你 package.json 里有 "dev": "nodemon src/index.ts" 或类似命令
+    # 如果没有，可以用 npx ts-node src/index.ts
+    command: sh -c "npm install && npx prisma generate && npx ts-node src/index.ts"
     restart: on-failure
     networks:
       - web-network
@@ -24,19 +33,18 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"  # 映射80端口到本地
+      - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf  # 挂载nginx配置文件
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - web-hosting-platform
     restart: unless-stopped
     networks:
       - web-network
 
-  # Redis 服务 (开发环境)
+  # Redis 服务
   redis:
     image: redis:alpine
-    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     volumes:
@@ -47,7 +55,6 @@ services:
 volumes:
   redis_data:
 
-# 网络配置
 networks:
   web-network:
     driver: bridge
