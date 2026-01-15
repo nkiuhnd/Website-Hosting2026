@@ -4,6 +4,7 @@ services:
     image: hanshuai23/web-hosting-platform:latest
     volumes:
       - ./server/prisma/dev_v2.db:/app/server/prisma/dev_v2.db
+      - ./server/.env:/app/server/.env
     environment:
       - NODE_ENV=production
       - REDIS_HOST=redis
