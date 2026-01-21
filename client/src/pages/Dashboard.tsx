@@ -2,10 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import api from '../api';
 import { useAuth } from '../context/useAuth';
-import { Trash2, ExternalLink, LogOut, LayoutGrid, List, Search } from 'lucide-react';
+import { Trash2, ExternalLink, LogOut, LayoutGrid, List, Search, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ProjectIcon from '../components/ProjectIcon';
+import { useNavigate } from 'react-router-dom';
+import ZipRulesModal from '../components/ZipRulesModal';
 
 interface Project {
   id: string;
@@ -34,6 +36,9 @@ export default function Dashboard() {
   );
   const [search, setSearch] = useState('');
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [uploadErrorMsg, setUploadErrorMsg] = useState('');
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -77,7 +82,8 @@ export default function Dashboard() {
         ? (data as { message?: unknown }).message
         : undefined;
       const message = typeof rawMessage === 'string' ? rawMessage : undefined;
-      alert(message || t('common.action_failed'));
+      setUploadErrorMsg(message || t('common.action_failed'));
+      setErrorModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -110,6 +116,10 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
           <LanguageSwitcher />
           <span className="text-gray-600 hidden md:inline">{t('common.welcome')}, <strong>{username}</strong></span>
+          <button onClick={() => navigate('/profile')} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition" title="个人中心">
+            <User size={18} /> <span className="hidden md:inline">个人中心</span>
+          </button>
+          <div className="h-4 w-px bg-gray-300 mx-1 hidden md:block"></div>
           <button onClick={logout} className="flex items-center gap-2 text-red-600 hover:text-red-700 transition" title={t('common.logout')}>
             <LogOut size={18} /> <span className="hidden md:inline">{t('common.logout')}</span>
           </button>
@@ -293,6 +303,11 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      <ZipRulesModal 
+        isOpen={errorModalOpen} 
+        onClose={() => setErrorModalOpen(false)} 
+        errorMessage={uploadErrorMsg}
+      />
     </div>
   );
 }
