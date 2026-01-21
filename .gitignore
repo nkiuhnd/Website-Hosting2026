@@ -19,6 +19,7 @@ server/.env
 
 server/prisma/*.db
 server/prisma/*.db-journal
+server/prisma/production.db
 
 # Uploads and temporary files
 server/uploads/*
