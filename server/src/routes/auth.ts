@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma';
 import { sendSmsCode, verifySmsCode } from '../utils/sms';
+import { authenticateToken, AuthRequest } from '../middlewares/auth';
 
 const router = Router();
 const LOCKOUT_THRESHOLD = parseInt(process.env.LOCKOUT_THRESHOLD || '5', 10);
@@ -316,3 +317,80 @@ router.get('/lookup-username', async (req, res) => {
 });
 
 export default router;
+
+// Get Current User Profile & Stats
+router.get('/me', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user!.id;
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                _count: {
+                    select: { projects: true }
+                },
+                projects: {
+                    select: { size: true, visitCount: true }
+                },
+                loginLogs: {
+                    take: 10,
+                    orderBy: { createdAt: 'desc' }
+                }
+            }
+        });
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const totalSize = user.projects.reduce((acc, p) => acc + p.size, 0);
+        const totalVisits = user.projects.reduce((acc, p) => acc + p.visitCount, 0);
+
+        res.json({
+            id: user.id,
+            username: user.username,
+            phone: user.phone ? user.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : null,
+            role: user.role,
+            createdAt: user.createdAt,
+            stats: {
+                projectCount: user._count.projects,
+                totalSize,
+                totalVisits
+            },
+            loginLogs: user.loginLogs
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Change Password
+router.post('/change-password', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const userId = req.user!.id;
+
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ message: 'Please provide both old and new passwords' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'New password must be at least 6 characters' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const validPassword = await bcrypt.compare(oldPassword, user.password);
+        if (!validPassword) {
+            return res.status(400).json({ message: 'Incorrect old password' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword }
+        });
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});

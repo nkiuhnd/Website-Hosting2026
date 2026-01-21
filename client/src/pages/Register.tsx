@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { sendSmsCode, verifyRegisterCode } from '../api/auth';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import TermsModal from '../components/TermsModal';
 import { useTranslation } from 'react-i18next';
 import { AxiosError } from 'axios';
 
@@ -20,6 +21,8 @@ const Register = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   // 清理倒计时
   useEffect(() => {
@@ -81,6 +84,10 @@ const Register = () => {
     }
     if (code.length !== 6) {
       setErrorMsg('验证码为6位数字');
+      return;
+    }
+    if (!agreed) {
+      setErrorMsg('请阅读并同意用户注册协议');
       return;
     }
     if (isSubmitting) return;
@@ -203,11 +210,37 @@ const Register = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium disabled:opacity-70"
+            className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium disabled:opacity-70 mb-4"
           >
             {isSubmitting ? '注册中...' : t('common.register')}
           </button>
+
+          {/* 协议勾选 */}
+          <div className="mb-4 flex items-start gap-2">
+            <input
+              type="checkbox"
+              id="agreement"
+              checked={agreed}
+              onChange={(e) => {
+                setAgreed(e.target.checked);
+                setErrorMsg('');
+              }}
+              className="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+            />
+            <label htmlFor="agreement" className="text-sm text-gray-600 select-none">
+              我已阅读并同意 
+              <button 
+                type="button"
+                onClick={() => setShowTerms(true)}
+                className="text-indigo-600 hover:underline hover:text-indigo-800 ml-1 font-medium"
+              >
+                《用户注册协议与免责声明》
+              </button>
+            </label>
+          </div>
         </form>
+
+        <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
 
         <div className="mt-4 text-center text-sm text-gray-600">
           已有账号？ <Link to="/login" className="text-blue-600 hover:underline">{t('common.login')}</Link>
