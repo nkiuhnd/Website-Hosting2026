@@ -33,6 +33,8 @@ const buildSiteUrl = (baseUrl: string, username: string, projectName: string, en
     return `${siteBase}/${encodeURIComponent(projectName)}${entrySuffix}`;
 };
 
+import { sendSmsCode, verifySmsCode } from '../utils/sms';
+
 // Middleware to check if user is admin
 const isAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (req.user?.role !== 'ADMIN') {
@@ -42,6 +44,20 @@ const isAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
 };
 
 router.use(authenticateToken, isAdmin);
+
+// Send Verification Code for Sensitive Actions
+router.post('/send-verify-code', async (req: Request, res: Response) => {
+    try {
+        const adminPhone = process.env.ADMIN_PHONE;
+        if (!adminPhone) {
+            return res.status(500).json({ message: 'Admin phone not configured' });
+        }
+        await sendSmsCode(adminPhone);
+        res.json({ message: 'Verification code sent' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message || 'Failed to send code' });
+    }
+});
 
 // Get Dashboard Stats
 router.get('/stats', async (req: Request, res: Response) => {
@@ -239,6 +255,22 @@ router.patch('/projects/:id/status', async (req: Request, res: Response) => {
 router.delete('/users/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params as { id: string };
+        const verifyCode = req.headers['x-verify-code'] as string;
+
+        if (!verifyCode) {
+            return res.status(400).json({ message: 'Verification code required' });
+        }
+
+        const adminPhone = process.env.ADMIN_PHONE;
+        if (!adminPhone) {
+            return res.status(500).json({ message: 'Admin phone not configured' });
+        }
+
+        const isValid = await verifySmsCode(adminPhone, verifyCode);
+        if (!isValid) {
+            return res.status(403).json({ message: 'Invalid or expired verification code' });
+        }
+
         const user = await prisma.user.findUnique({ where: { id } });
         if (!user) return res.status(404).json({ message: 'User not found' });
         if (user.role === 'ADMIN') return res.status(400).json({ message: 'Cannot delete admin user' });

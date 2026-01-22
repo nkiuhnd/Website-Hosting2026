@@ -35,8 +35,21 @@ export default function AdminUsers() {
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: SortDirection }>({ key: 'createdAt', direction: 'desc' });
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>;
+    if (countdown > 0) {
+      timer = setInterval(() => setCountdown(c => c - 1), 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [countdown]);
 
   const fetchUsers = useCallback(() => {
     api.get('/admin/users', {
@@ -77,10 +90,29 @@ export default function AdminUsers() {
     }
   };
 
+  const sendVerificationCode = async () => {
+    try {
+      await api.post('/admin/send-verify-code');
+      setCodeSent(true);
+      setCountdown(60);
+      alert(t('common.verification_code_sent'));
+    } catch (error: any) {
+      alert(error.response?.data?.message || t('common.action_failed'));
+    }
+  };
+
   const confirmDeleteUser = async () => {
     if (!userToDelete) return;
+    if (!verifyCode) {
+      alert(t('common.verification_code_required'));
+      return;
+    }
     try {
-      await api.delete(`/admin/users/${userToDelete}`);
+      await api.delete(`/admin/users/${userToDelete}`, {
+        headers: {
+          'x-verify-code': verifyCode
+        }
+      });
       fetchUsers();
     } catch (error: unknown) {
       const status = (error as { response?: { status?: number } } | null | undefined)?.response?.status;
@@ -96,6 +128,8 @@ export default function AdminUsers() {
     } finally {
         setDeleteModalOpen(false);
         setUserToDelete(null);
+        setVerifyCode('');
+        setCodeSent(false);
     }
   };
 
@@ -287,6 +321,37 @@ export default function AdminUsers() {
             <p className="text-gray-600 mb-6">
               {t('admin.confirm_delete_warning', 'Are you sure you want to delete this user? This action cannot be undone.')}
             </p>
+
+            {/* Verification Code Input */}
+            <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('common.verification_code', 'SMS Verification Code')}
+                </label>
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={verifyCode}
+                        onChange={(e) => setVerifyCode(e.target.value)}
+                        className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                        placeholder="123456"
+                    />
+                    <button
+                        onClick={sendVerificationCode}
+                        disabled={countdown > 0}
+                        className={`px-3 py-2 rounded-md text-sm font-medium ${
+                            countdown > 0
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                        }`}
+                    >
+                        {countdown > 0 ? `${countdown}s` : (codeSent ? t('common.resend') : t('common.send_code'))}
+                    </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                    验证码将发送至管理员手机号 (尾号8879)
+                </p>
+            </div>
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeleteModalOpen(false)}
@@ -296,7 +361,12 @@ export default function AdminUsers() {
               </button>
               <button
                 onClick={confirmDeleteUser}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                disabled={!verifyCode}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                    !verifyCode 
+                    ? 'bg-red-300 text-white cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
               >
                 {t('common.confirm')}
               </button>
