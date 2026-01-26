@@ -64,7 +64,7 @@ async function injectFooter(filePath: string) {
 
         const footer = `
 <footer style="position:fixed; bottom:0; left:0; right:0; background:#f9fafb; text-align:center; padding:6px 0; font-size:12px; color:#666; border-top:1px solid #eee; z-index:9999;">
-  本网页由 <a href="https://yunmind.cn" target="_blank" style="color:#3b82f6; text-decoration:none;">yunmind.cn</a> 免费托管 · 上传网页文件，即可免费分享。
+  本网页由 <a href="https://yunmind.cn" target="_blank" style="color:#3b82f6; text-decoration:none;">yunmind.cn</a> 免费托管 · 拖拽 HTML 秒变公网网站，一键生成专属链接
 </footer>
 `;
         
