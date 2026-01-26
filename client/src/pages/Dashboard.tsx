@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import api from '../api';
 import { useAuth } from '../context/useAuth';
-import { Trash2, ExternalLink, LogOut, LayoutGrid, List, Search, User, Download } from 'lucide-react';
+import { Trash2, ExternalLink, LogOut, LayoutGrid, List, Search, User, Download, QrCode } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ProjectIcon from '../components/ProjectIcon';
 import { useNavigate } from 'react-router-dom';
 import ZipRulesModal from '../components/ZipRulesModal';
+import ShareQRCodeModal from '../components/ShareQRCodeModal';
 
 interface Project {
   id: string;
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [uploadErrorMsg, setUploadErrorMsg] = useState('');
+  const [shareModalData, setShareModalData] = useState<{ url: string; name: string } | null>(null);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -257,6 +259,13 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => setShareModalData({ url: project.siteUrl || '', name: project.name })}
+                      className="text-gray-300 hover:text-indigo-600 transition p-1"
+                      title="分享二维码"
+                    >
+                      <QrCode size={18} />
+                    </button>
                     <button onClick={() => onDownload(project.id, project.name)} className="text-gray-300 hover:text-blue-500 transition p-1" title={t('common.download')}>
                       <Download size={18} />
                     </button>
@@ -354,6 +363,12 @@ export default function Dashboard() {
         isOpen={errorModalOpen} 
         onClose={() => setErrorModalOpen(false)} 
         errorMessage={uploadErrorMsg}
+      />
+      <ShareQRCodeModal
+        isOpen={!!shareModalData}
+        onClose={() => setShareModalData(null)}
+        projectUrl={shareModalData?.url || ''}
+        projectName={shareModalData?.name || ''}
       />
     </div>
   );
