@@ -52,6 +52,7 @@ export const zh = {
     no_projects: '暂无项目。快去上传你的第一个网站吧！',
     visit_site: '访问网站',
     no_description: '暂无描述',
+    show_platform_footer: '在网页底部显示平台标注',
   },
   admin: {
     system_overview: '系统概览',

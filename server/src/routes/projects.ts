@@ -53,6 +53,50 @@ const buildSiteUrl = (baseUrl: string, username: string, projectName: string, en
   return `${siteBase}/${encodeURIComponent(projectName)}${entrySuffix}`;
 };
 
+// Inject Footer (Watermark)
+async function injectFooter(filePath: string) {
+    try {
+        let html = await fs.readFile(filePath, 'utf-8');
+        // Check if footer already exists to avoid duplication (simple check)
+        if (html.includes('yunmind.cn </a> 免费托管')) {
+            return;
+        }
+
+        const footer = `
+<footer style="position:fixed; bottom:0; left:0; right:0; background:#f9fafb; text-align:center; padding:6px 0; font-size:12px; color:#666; border-top:1px solid #eee; z-index:9999;">
+  本网页由 <a href="https://yunmind.cn" target="_blank" style="color:#3b82f6; text-decoration:none;">yunmind.cn</a> 免费托管 · 上传网页文件，即可免费分享。
+</footer>
+`;
+        
+        if (html.includes('</body>')) {
+             html = html.replace(/<\/body>/i, `${footer}</body>`);
+        } else {
+             html += footer;
+        }
+        await fs.writeFile(filePath, html);
+    } catch (err) {
+        console.error(`Failed to inject footer for ${filePath}:`, err);
+    }
+}
+
+// Recursively inject footer into all HTML files
+async function injectFooterToAllHtml(dir: string) {
+    try {
+        const files = await fs.readdir(dir);
+        for (const file of files) {
+            const fullPath = path.join(dir, file);
+            const stat = await fs.stat(fullPath);
+            if (stat.isDirectory()) {
+                await injectFooterToAllHtml(fullPath);
+            } else if (file.toLowerCase().endsWith('.html') || file.toLowerCase().endsWith('.htm')) {
+                await injectFooter(fullPath);
+            }
+        }
+    } catch (err) {
+        console.error(`Failed to process directory for footer injection: ${dir}`, err);
+    }
+}
+
 // Create Project & Upload
 router.post('/', authenticateToken, uploadMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -178,6 +222,15 @@ router.post('/', authenticateToken, uploadMiddleware, async (req: AuthRequest, r
         
         // Remove temp zip file
         await fs.unlink(file.path);
+        
+        // Inject footer into all HTML files in the project
+        // We can check user preference here if we passed it in req.body
+        // For now, default to true or check req.body.showPlatformFooter
+        const showFooter = req.body.showPlatformFooter !== 'false'; 
+        if (showFooter) {
+            await injectFooterToAllHtml(projectDir);
+        }
+
     } else {
         // Single HTML file - Strict MIME type check
         if (file.mimetype !== 'text/html') {
@@ -189,6 +242,12 @@ router.post('/', authenticateToken, uploadMiddleware, async (req: AuthRequest, r
         await fs.move(file.path, finalPath, { overwrite: true });
         const stats = await fs.stat(finalPath);
         totalSize = stats.size;
+
+        // Inject footer
+        const showFooter = req.body.showPlatformFooter !== 'false';
+        if (showFooter) {
+            await injectFooter(finalPath);
+        }
     }
 
     const project = await prisma.project.create({
@@ -198,7 +257,9 @@ router.post('/', authenticateToken, uploadMiddleware, async (req: AuthRequest, r
         userId: user.id,
         storagePath: projectDir,
         entryFile: entryFile,
-        size: totalSize
+        size: totalSize,
+        // showPlatformFooter is defined in schema and generated client
+        showPlatformFooter: req.body.showPlatformFooter !== 'false'
       }
     });
 

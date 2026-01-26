@@ -24,12 +24,17 @@ interface UploadProjectForm {
   name: string;
   description?: string;
   file: FileList;
+  showPlatformFooter: boolean;
 }
 
 export default function Dashboard() {
   const { username, logout } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<UploadProjectForm>();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<UploadProjectForm>({
+    defaultValues: {
+      showPlatformFooter: true
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(
     (localStorage.getItem('dashboardViewMode') as 'grid' | 'list') || 'grid'
@@ -69,6 +74,7 @@ export default function Dashboard() {
     formData.append('name', data.name);
     formData.append('description', data.description || '');
     formData.append('file', data.file[0]);
+    formData.append('showPlatformFooter', String(data.showPlatformFooter));
 
     try {
       await api.post('/projects', formData, {
@@ -184,6 +190,17 @@ export default function Dashboard() {
             </button>
           </form>
           <p className="text-xs text-gray-500 mt-3">{t('dashboard.upload_hint')}</p>
+          {/* <div className="mt-2 flex items-center">
+            <input
+              type="checkbox"
+              id="showPlatformFooter"
+              {...register('showPlatformFooter')}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+            />
+            <label htmlFor="showPlatformFooter" className="ml-2 text-xs text-gray-600">
+              {t('dashboard.show_platform_footer')} (推荐开启，帮助平台推广)
+            </label>
+          </div> */}
         </div>
 
         {/* Toolbar: Title, Search, View Toggle */}

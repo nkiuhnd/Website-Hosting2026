@@ -48,6 +48,7 @@ model Project {
   size        Int      @default(0) // Size in bytes
   visitCount  Int      @default(0)
   status      String   @default("ACTIVE") // "ACTIVE" or "DISABLED"
+  showPlatformFooter Boolean @default(true)
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
