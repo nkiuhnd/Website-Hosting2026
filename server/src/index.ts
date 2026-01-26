@@ -229,9 +229,10 @@ app.use('/:projectName', async (req, res, next) => {
     const parts = hostname.split('.');
     if (parts.length < 3) return next();
     const username = parts[0];
+    if (username === 'www') return next();
     const projectName = req.params.projectName;
     if (!username || !projectName) return next();
-    if (projectName === 'api' || projectName === 'sites' || projectName === 'assets' || projectName === 'favicon.ico') return next();
+    if (projectName === 'api' || projectName === 'sites' || projectName === 'assets' || projectName === 'favicon.ico' || projectName === 'logo.svg') return next();
     if (req.path === '/' && !req.originalUrl.split('?')[0].endsWith('/')) {
         return res.redirect(req.originalUrl + '/');
     }
