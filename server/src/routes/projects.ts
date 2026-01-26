@@ -247,6 +247,38 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Download Project
+router.get('/:id/download', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params as { id: string };
+    const user = req.user!;
+
+    const project = await prisma.project.findFirst({
+      where: { id, userId: user.id }
+    });
+
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+    
+    if (!project.storagePath || !fs.existsSync(project.storagePath)) {
+        return res.status(404).json({ message: 'Project files not found' });
+    }
+
+    const zip = new AdmZip();
+    zip.addLocalFolder(project.storagePath);
+    const buffer = zip.toBuffer();
+    
+    const fileName = `${project.name}.zip`;
+    res.set('Content-Type', 'application/zip');
+    res.set('Content-Disposition', `attachment; filename=${fileName}`);
+    res.set('Content-Length', String(buffer.length));
+    res.send(buffer);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Delete Project
 router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {

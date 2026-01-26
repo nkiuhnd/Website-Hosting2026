@@ -25,6 +25,8 @@ export const zh = {
     disabled: '已禁用',
     yes: '是',
     no: '否',
+    download: '下载',
+    download_failed: '下载失败',
   },
   login: {
     title: '登录',

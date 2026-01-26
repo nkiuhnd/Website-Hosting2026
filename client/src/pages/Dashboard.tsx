@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import api from '../api';
 import { useAuth } from '../context/useAuth';
-import { Trash2, ExternalLink, LogOut, LayoutGrid, List, Search, User } from 'lucide-react';
+import { Trash2, ExternalLink, LogOut, LayoutGrid, List, Search, User, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ProjectIcon from '../components/ProjectIcon';
@@ -96,6 +96,24 @@ export default function Dashboard() {
       fetchProjects();
     } catch {
       alert(t('common.delete_failed'));
+    }
+  };
+
+  const onDownload = async (id: string, name: string) => {
+    try {
+      const response = await api.get(`/projects/${id}/download`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${name}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(t('common.download_failed') || 'Download failed');
     }
   };
 
@@ -221,9 +239,14 @@ export default function Dashboard() {
                       <span className="text-xs text-gray-400">{formatBytes(project.size)}</span>
                     </div>
                   </div>
-                  <button onClick={() => onDelete(project.id)} className="text-gray-300 hover:text-red-500 transition p-1">
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => onDownload(project.id, project.name)} className="text-gray-300 hover:text-blue-500 transition p-1" title={t('common.download')}>
+                      <Download size={18} />
+                    </button>
+                    <button onClick={() => onDelete(project.id)} className="text-gray-300 hover:text-red-500 transition p-1" title={t('common.delete')}>
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2 h-10">{project.description || t('dashboard.no_description')}</p>
                 
@@ -286,6 +309,13 @@ export default function Dashboard() {
                           >
                             <ExternalLink size={18} />
                           </a>
+                          <button 
+                            onClick={() => onDownload(project.id, project.name)} 
+                            className="text-gray-400 hover:text-blue-600"
+                            title={t('common.download')}
+                          >
+                            <Download size={18} />
+                          </button>
                           <button 
                             onClick={() => onDelete(project.id)} 
                             className="text-gray-400 hover:text-red-600"
