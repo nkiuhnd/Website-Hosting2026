@@ -64,7 +64,7 @@ export default function Login() {
             />
             {errors.password && <span className="text-red-500 text-sm">{t('common.required')}</span>}
           </div>
-          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition">
+          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition cursor-pointer">
             {t('common.login')}
           </button>
         </form>

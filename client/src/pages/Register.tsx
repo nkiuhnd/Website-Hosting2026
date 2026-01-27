@@ -82,6 +82,11 @@ const Register = () => {
       setErrorMsg('密码至少6个字符');
       return;
     }
+    // Validate username format (subdomain compatible)
+    if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(username)) {
+      setErrorMsg('用户名只能包含字母、数字和连字符(-)，且不能以连字符开头或结尾');
+      return;
+    }
     if (code.length !== 6) {
       setErrorMsg('验证码为6位数字');
       return;
@@ -142,7 +147,7 @@ const Register = () => {
               value={formData.username}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="请设置用户名"
+              placeholder="请设置用户名（仅限字母、数字、-）"
             />
           </div>
 
@@ -183,7 +188,7 @@ const Register = () => {
                 type="button"
                 onClick={handleSendCode}
                 disabled={countdown > 0}
-                className="px-3 py-2 bg-blue-600 text-white text-sm rounded disabled:bg-gray-400 hover:bg-blue-700 transition-colors whitespace-nowrap"
+                className="px-3 py-2 bg-blue-600 text-white text-sm rounded disabled:bg-gray-400 hover:bg-blue-700 transition-colors whitespace-nowrap cursor-pointer"
               >
                 {countdown > 0 ? `${countdown}s` : '获取验证码'}
               </button>
@@ -210,7 +215,7 @@ const Register = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium disabled:opacity-70 mb-4"
+            className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium disabled:opacity-70 mb-4 cursor-pointer"
           >
             {isSubmitting ? '注册中...' : t('common.register')}
           </button>
@@ -232,7 +237,7 @@ const Register = () => {
               <button 
                 type="button"
                 onClick={() => setShowTerms(true)}
-                className="text-indigo-600 hover:underline hover:text-indigo-800 ml-1 font-medium"
+                className="text-indigo-600 hover:underline hover:text-indigo-800 ml-1 font-medium cursor-pointer"
               >
                 《用户注册协议与免责声明》
               </button>

@@ -1,9 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useState } from 'react';
+import { AboutModal, DocsModal, PrivacyModal, ContactModal } from '../components/InfoModals';
 
 const Home = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
+
+  const [showAbout, setShowAbout] = useState(false);
+  const [showDocs, setShowDocs] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showContact, setShowContact] = useState(false);
 
   const handleStart = () => {
     if (token) {
@@ -30,13 +37,13 @@ const Home = () => {
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => navigate('/login')}
-                className="text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors"
+                className="text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer"
               >
                 登录
               </button>
               <button 
                 onClick={handleStart}
-                className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-all hover:shadow-lg"
+                className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-all hover:shadow-lg cursor-pointer"
               >
                 {token ? '控制台' : '免费注册'}
               </button>
@@ -75,7 +82,7 @@ const Home = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button 
                 onClick={handleStart}
-                className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-all hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
+                className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-all hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2 cursor-pointer"
               >
                 开始免费托管
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,7 +91,7 @@ const Home = () => {
               </button>
               <button 
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-8 py-4 bg-white text-gray-700 border border-gray-200 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all hover:border-gray-300 w-full sm:w-auto"
+                className="px-8 py-4 bg-white text-gray-700 border border-gray-200 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all hover:border-gray-300 w-full sm:w-auto cursor-pointer"
               >
                 了解更多
               </button>
@@ -315,7 +322,7 @@ const Home = () => {
           </p>
           <button 
             onClick={handleStart}
-            className="px-10 py-4 bg-white text-gray-900 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-xl"
+            className="px-10 py-4 bg-white text-gray-900 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-xl cursor-pointer"
           >
             立即免费注册
           </button>
@@ -334,16 +341,22 @@ const Home = () => {
             <span className="font-bold text-gray-900">YunMind</span>
           </div>
           <div className="flex gap-8 text-sm text-gray-500">
-            <a href="#" className="hover:text-gray-900">关于我们</a>
-            <a href="#" className="hover:text-gray-900">使用文档</a>
-            <a href="#" className="hover:text-gray-900">隐私政策</a>
-            <a href="#" className="hover:text-gray-900">联系支持</a>
+            <button onClick={() => setShowAbout(true)} className="hover:text-gray-900 transition-colors cursor-pointer">关于我们</button>
+            <button onClick={() => setShowDocs(true)} className="hover:text-gray-900 transition-colors cursor-pointer">使用文档</button>
+            <button onClick={() => setShowPrivacy(true)} className="hover:text-gray-900 transition-colors cursor-pointer">隐私政策</button>
+            <button onClick={() => setShowContact(true)} className="hover:text-gray-900 transition-colors cursor-pointer">联系支持</button>
           </div>
           <div className="text-sm text-gray-400">
             © 2026 YunMind. All rights reserved.
           </div>
         </div>
       </footer>
+
+      {/* Modals */}
+      <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
+      <DocsModal isOpen={showDocs} onClose={() => setShowDocs(false)} />
+      <PrivacyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
+      <ContactModal isOpen={showContact} onClose={() => setShowContact(false)} />
     </div>
   );
 };
