@@ -75,8 +75,8 @@ const Home = () => {
             </h1>
             
             <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
-              告别繁琐的服务器配置。上传即生成专属私密链接，
-              默认不被搜索引擎收录，只有知道链接的人才能访问，确保你的数据与创意安全。
+              告别繁琐的服务器配置。上传即生成专属链接，
+              默认难以被搜索引擎发现，适合分享给特定对象或作为个人展示。
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -288,7 +288,7 @@ const Home = () => {
               },
               {
                 title: '隐私优先',
-                desc: '你的网页默认是“隐形”的。我们配置了防爬虫协议，只有你分享链接的对象才能访问。非常适合内部测试、个人简历或私密项目。',
+                desc: '只有你分享链接的对象才能访问,非常适合内部测试、个人简历或私密项目。',
                 icon: (
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />

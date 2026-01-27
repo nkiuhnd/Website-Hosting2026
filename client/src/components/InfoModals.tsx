@@ -65,7 +65,7 @@ export const AboutModal: React.FC<ModalProps> = (props) => (
         <h4 className="font-bold text-gray-900 mb-2">🚀 核心特性</h4>
         <ul className="list-disc list-inside space-y-1 pl-2">
           <li><span className="font-medium text-gray-900">秒级部署</span>：拖拽 ZIP 包，几秒钟内生成可访问链接。</li>
-          <li><span className="font-medium text-gray-900">隐私优先</span>：默认配置防爬虫协议，适合私密分享。</li>
+          <li><span className="font-medium text-gray-900">隐形部署</span>：生成的链接除非主动公开，否则通常不会被搜索引擎抓取。</li>
           <li><span className="font-medium text-gray-900">完全免费</span>：致力于为个人开发者提供长期免费的基础服务。</li>
         </ul>
       </div>
@@ -127,7 +127,7 @@ export const DocsModal: React.FC<ModalProps> = (props) => (
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <h5 className="font-bold text-gray-800 mb-1">Q: 部署的网页会被搜索引擎收录吗？</h5>
-            <p className="text-sm">A: 这取决于搜索引擎的爬取策略。如果您希望控制收录情况，建议在页面中自行添加 robots.txt 或 meta 标签。</p>
+            <p className="text-sm">A: 生成的链接难以猜测，除非主动公开，否则通常不会被搜索引擎抓取。如果您希望严格禁止收录，建议自行添加 robots.txt。</p>
           </div>
         </div>
       </div>
