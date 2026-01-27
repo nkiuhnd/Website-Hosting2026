@@ -1,5 +1,5 @@
-# 使用 Node.js v20.19.4 的 Alpine 基础镜像
-FROM node:20.19.4-alpine AS base
+# 使用 Node.js 20 LTS 的 Alpine 基础镜像（跟随官方 20.x 最新小版本）
+FROM node:20-alpine AS base
 
 # 创建必要的目录结构
 RUN mkdir -p /app/server /app/client
