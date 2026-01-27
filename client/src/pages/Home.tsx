@@ -147,7 +147,7 @@ const Home = () => {
                       <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
                     </div>
                     <div className="flex-1 bg-white border border-gray-200 rounded text-[10px] text-gray-400 px-2 py-0.5 text-center mx-2 truncate">
-                      demo.yunmind.cn/app
+                      user3.yunmind.cn/app
                     </div>
                   </div>
                   <div className="h-64 bg-indigo-50 p-6 relative overflow-hidden group-hover:bg-indigo-100 transition-colors">
@@ -184,7 +184,7 @@ const Home = () => {
                       <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
                     </div>
                     <div className="flex-1 bg-white border border-gray-200 rounded text-[10px] text-gray-400 px-2 py-0.5 text-center mx-2 truncate">
-                      blog.yunmind.cn
+                      user4.yunmind.cn/blog
                     </div>
                   </div>
                   <div className="h-48 bg-gray-50 p-4 relative overflow-hidden group-hover:bg-gray-100 transition-colors">
