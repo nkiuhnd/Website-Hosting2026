@@ -58,7 +58,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
 
-const serveProjectFile = async (username: string, projectName: string, filePath: string, res: Response) => {
+const serveProjectFile = async (req: Request, username: string, projectName: string, filePath: string, res: Response) => {
   try {
     const user = await prisma.user.findUnique({ where: { username } });
     if (!user) return res.status(404).send('User not found');
@@ -73,13 +73,21 @@ const serveProjectFile = async (username: string, projectName: string, filePath:
         return res.status(403).send('Project has been disabled by admin');
     }
 
-    // Increment visit count (only for main entry or all? let's do all for now or just index)
-    // To be more accurate, maybe only on page load. But simple is fine.
+    // Increment visit count and log visit
     if (filePath === 'index.html' || filePath === project.entryFile) {
-        await prisma.project.update({
-            where: { id: project.id },
-            data: { visitCount: { increment: 1 } }
-        });
+        await prisma.$transaction([
+            prisma.project.update({
+                where: { id: project.id },
+                data: { visitCount: { increment: 1 } }
+            }),
+            prisma.visitLog.create({
+                data: {
+                    projectId: project.id,
+                    ip: req.ip || req.socket.remoteAddress || 'unknown',
+                    userAgent: req.get('User-Agent') || 'unknown'
+                }
+            })
+        ]);
     }
 
     // Security check: prevent directory traversal
@@ -219,7 +227,7 @@ app.use('/sites/:username/:projectName', async (req, res, next) => {
     
     console.log(`[Request] Project: ${req.params.projectName}, Path: ${req.path}, Decoded: ${decodedPath}, FilePath: ${filePath}`);
     
-    await serveProjectFile(req.params.username, req.params.projectName, filePath, res);
+    await serveProjectFile(req, req.params.username, req.params.projectName, filePath, res);
 });
 
 app.use('/:projectName', async (req, res, next) => {
@@ -254,7 +262,7 @@ app.use('/:projectName', async (req, res, next) => {
     const decodedPath = decodeURIComponent(req.path);
     const filePath = decodedPath === '/' ? 'index.html' : decodedPath.substring(1);
     console.log(`[Request] Subdomain user: ${username}, Project: ${projectName}, Path: ${req.path}, Decoded: ${decodedPath}, FilePath: ${filePath}`);
-    await serveProjectFile(username, projectName, filePath, res);
+    await serveProjectFile(req, username, projectName, filePath, res);
 });
 
 // Serve React Frontend

@@ -84,16 +84,60 @@ router.get('/stats', async (req: Request, res: Response) => {
             where: { lastActiveAt: { gte: fiveMinsAgo } }
         });
 
+        // Visits today
+        const visitsToday = await prisma.visitLog.count({
+            where: { createdAt: { gte: startOfDay } }
+        });
+
         res.json({
             totalUsers,
             totalProjects,
             totalVisits: totalVisits._sum.visitCount || 0,
+            visitsToday,
             totalStorage: totalStorage._sum.size || 0,
             activeUsersToday,
             currentActiveUsers
         });
     } catch (error) {
         console.error('Delete user error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Get Recent Visits
+router.get('/visit-logs', async (req: Request, res: Response) => {
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 50;
+        const skip = (page - 1) * limit;
+
+        const [logs, total] = await prisma.$transaction([
+            prisma.visitLog.findMany({
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    project: {
+                        select: {
+                            name: true,
+                            user: {
+                                select: { username: true }
+                            }
+                        }
+                    }
+                }
+            }),
+            prisma.visitLog.count()
+        ]);
+
+        res.json({
+            logs,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        });
+    } catch (error) {
+        console.error('Get visit logs error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
