@@ -128,7 +128,7 @@ async function injectFooter(filePath: string) {
       submitBtn.innerText = '提交中...';
 
       const apiBase = window.location.origin;
-      const apiUrl = apiBase.replace(/\/$/, '') + '/api/reports';
+      const apiUrl = apiBase + '/api/reports';
 
       fetch(apiUrl, {
         method: 'POST',
