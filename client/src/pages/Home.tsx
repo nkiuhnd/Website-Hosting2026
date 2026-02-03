@@ -75,8 +75,8 @@ const Home = () => {
             </h1>
             
             <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
-              告别繁琐的服务器配置。上传即生成专属链接，
-              默认难以被搜索引擎发现，适合分享给特定对象或作为个人展示。
+              告别繁琐的服务器配置，上传即生成专属链接。
+              适合分享给特定对象或作为个人展示。
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

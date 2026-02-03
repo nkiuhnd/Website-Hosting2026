@@ -3,6 +3,7 @@ import prisma from '../prisma';
 import { authenticateToken, AuthRequest } from '../middlewares/auth';
 import fs from 'fs-extra';
 import bcrypt from 'bcryptjs';
+import { resolveProjectFromUrl } from '../utils/projectResolver';
 
 const router = Router();
 
@@ -100,6 +101,32 @@ router.get('/stats', async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Delete user error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.post('/announcements', async (req: Request, res: Response) => {
+    try {
+        const title = String(req.body?.title || '').trim() || '系统公告';
+        const content = String(req.body?.content || '').trim();
+        if (!content) return res.status(400).json({ message: '公告内容不能为空' });
+
+        const users = await prisma.user.findMany({ select: { id: true } });
+        if (users.length === 0) {
+            return res.json({ message: 'No users', count: 0 });
+        }
+
+        await prisma.message.createMany({
+            data: users.map(user => ({
+                userId: user.id,
+                title,
+                content,
+                type: 'announcement'
+            }))
+        });
+
+        res.json({ message: 'Announcement sent', count: users.length });
+    } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -296,6 +323,27 @@ router.patch('/projects/:id/status', async (req: Request, res: Response) => {
     }
 });
 
+// Toggle User Status (Ban/Unban)
+router.patch('/users/:id/status', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params as { id: string };
+        const { status } = req.body; // ACTIVE or BANNED
+
+        const user = await prisma.user.findUnique({ where: { id } });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (user.role === 'ADMIN') return res.status(400).json({ message: 'Cannot ban admin user' });
+
+        const updatedUser = await prisma.user.update({
+            where: { id },
+            data: { status }
+        });
+        res.json(updatedUser);
+    } catch (error) {
+        console.error('Update user status error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 router.delete('/users/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params as { id: string };
@@ -359,6 +407,161 @@ router.patch('/users/:id/reset-password', async (req: Request, res: Response) =>
         await prisma.user.update({ where: { id }, data: { password: hashed } });
         res.json({ message: 'Password reset' });
     } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// --- Report Management ---
+
+// Get all reports
+router.get('/reports', async (req: Request, res: Response) => {
+    try {
+        const reports = await prisma.report.findMany({
+            orderBy: { createdAt: 'desc' },
+            // Manually fetch project info since schema relation might be tricky or missing
+            // But actually we can just fetch all reports and then enhance them
+        });
+        
+        // Enhance reports with project and user violation stats
+        const enhancedReports = await Promise.all(reports.map(async (report) => {
+            let projectId = report.projectId;
+            if (!projectId && report.targetUrl) {
+                projectId = await resolveProjectFromUrl(report.targetUrl);
+                if (projectId) {
+                    await prisma.report.update({
+                        where: { id: report.id },
+                        data: { projectId }
+                    });
+                }
+            }
+
+            let projectInfo = null;
+            let userViolationCount = 0;
+            let projectOwner = null;
+
+            if (projectId) {
+                let project = await prisma.project.findUnique({
+                    where: { id: projectId },
+                    include: { user: true }
+                });
+
+                if (project && report.status === 'HANDLED' && project.status !== 'DISABLED') {
+                    project = await prisma.project.update({
+                        where: { id: projectId },
+                        data: { status: 'DISABLED' },
+                        include: { user: true }
+                    });
+                }
+
+                if (project) {
+                    projectInfo = {
+                        name: project.name,
+                        status: project.status
+                    };
+                    projectOwner = {
+                        id: project.user.id,
+                        username: project.user.username,
+                        status: project.user.status
+                    };
+
+                    userViolationCount = await prisma.project.count({
+                        where: {
+                            userId: project.user.id,
+                            status: 'DISABLED'
+                        }
+                    });
+                }
+            }
+            
+            return {
+                ...report,
+                projectId, // Return resolved projectId
+                project: projectInfo,
+                user: projectOwner,
+                userViolationCount
+            };
+        }));
+
+        res.json(enhancedReports);
+    } catch (error) {
+        console.error('Get reports error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Update report status
+router.patch('/reports/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params as { id: string };
+        const { status } = req.body; // HANDLED, DISMISSED, PENDING
+
+        // Get the report first to check targetUrl
+        const existingReport = await prisma.report.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!existingReport) {
+            return res.status(404).json({ message: 'Report not found' });
+        }
+
+        let projectId = existingReport.projectId;
+        if (!projectId && existingReport.targetUrl) {
+            console.log(`[Admin] Resolving projectId for report ${id} from URL: ${existingReport.targetUrl}`);
+            projectId = await resolveProjectFromUrl(existingReport.targetUrl);
+        }
+
+        // If status is HANDLED, we MUST have a project to ban
+        if (status === 'HANDLED' && !projectId) {
+            console.error(`[Admin] Cannot confirm violation: Could not resolve project from URL ${existingReport.targetUrl}`);
+            return res.status(400).json({ message: '无法识别被举报的项目，请手动禁用该项目' });
+        }
+
+        // Update the report status
+        const report = await prisma.report.update({
+            where: { id: parseInt(id) },
+            data: { 
+                status,
+                projectId: projectId // Save the resolved projectId back to the report
+            }
+        });
+
+        // If status is HANDLED, it means the violation is confirmed -> Disable the project
+        if (status === 'HANDLED' && projectId) {
+              console.log(`[Admin] Banning project ${projectId} for report ${id}`);
+              const project = await prisma.project.update({
+                  where: { id: projectId },
+                  data: { status: 'DISABLED' },
+                  include: { user: true }
+              }).catch(err => {
+                  console.error('[Admin] Failed to disable project:', err);
+                  return null;
+              });
+
+              if (project) {
+                  console.log(`[Admin] Successfully disabled project ${project.name}. Sending notification to user ${project.userId}`);
+                  // Send a system message to the user
+                  await prisma.message.create({
+                      data: {
+                          userId: project.userId,
+                          title: '项目已被禁用',
+                          content: `您的项目 "${project.name}" 因违规举报已被管理员禁用。如有疑问请联系管理员。`,
+                          type: 'system'
+                      }
+                  }).catch(err => console.error('[Admin] Failed to send notification message:', err));
+              }
+        }
+
+        // If status is DISMISSED or PENDING, we might want to ensure project is ACTIVE?
+        // User requirement: "第二，不处理，经过审查该网页没有问题。" -> This implies we leave it as is or ensure it's active.
+        // But if it was previously DISABLED, should we re-enable it? 
+        // Let's be safe: If DISMISSED, we don't automatically re-enable because it might have been disabled for other reasons.
+        // But if the workflow is: PENDING -> HANDLED (Disabled) -> Oops mistake -> DISMISSED (Enable?)
+        // For now, let's only strictly implement the "HANDLED -> Disable" logic as requested. 
+        // Re-enabling usually requires manual intervention or explicit "Enable" action to avoid security holes.
+        
+        res.json(report);
+    } catch (error) {
+        console.error('Update report error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });

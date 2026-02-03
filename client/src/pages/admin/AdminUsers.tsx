@@ -96,8 +96,11 @@ export default function AdminUsers() {
       setCodeSent(true);
       setCountdown(60);
       alert(t('common.verification_code_sent'));
-    } catch (error: any) {
-      alert(error.response?.data?.message || t('common.action_failed'));
+    } catch (error: unknown) {
+      const data = (error as { response?: { data?: unknown } } | null | undefined)?.response?.data;
+      const rawMessage = (data && typeof data === 'object' && 'message' in data) ? (data as { message?: unknown }).message : undefined;
+      const message = typeof rawMessage === 'string' ? rawMessage : undefined;
+      alert(message || t('common.action_failed'));
     }
   };
 

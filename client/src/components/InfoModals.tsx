@@ -64,16 +64,16 @@ export const AboutModal: React.FC<ModalProps> = (props) => (
       <div>
         <h4 className="font-bold text-gray-900 mb-2">🚀 核心特性</h4>
         <ul className="list-disc list-inside space-y-1 pl-2">
-          <li><span className="font-medium text-gray-900">秒级部署</span>：拖拽 ZIP 包，几秒钟内生成可访问链接。</li>
+          <li><span className="font-medium text-gray-900">秒级部署</span>：拖拽 html文件或ZIP 包，几秒钟内生成可访问链接。</li>
           <li><span className="font-medium text-gray-900">隐形部署</span>：生成的链接除非主动公开，否则通常不会被搜索引擎抓取。</li>
-          <li><span className="font-medium text-gray-900">完全免费</span>：致力于为个人开发者提供长期免费的基础服务。</li>
+          <li><span className="font-medium text-gray-900">完全免费</span>：致力于为个人开发者提供长期的基础服务。</li>
         </ul>
       </div>
 
       <div>
         <h4 className="font-bold text-gray-900 mb-2">👨‍💻 关于开发者</h4>
         <p>
-          这是一个独立开发项目。我们相信工具应该服务于人，而不是让人服务于工具。
+          我们相信工具应该服务于人，而不是让人服务于工具。
           希望能帮助你更专注于创造本身。
         </p>
       </div>
@@ -193,7 +193,10 @@ export const ContactModal: React.FC<ModalProps> = (props) => {
         <div className="space-y-2">
           <h4 className="text-xl font-bold text-gray-900">有问题或建议？</h4>
           <p className="text-gray-600 max-w-sm mx-auto">
-            YunMind 是一个独立开发项目，欢迎任何反馈、Bug 报告或功能建议。
+            欢迎任何反馈、Bug 报告或功能建议。
+          </p>
+          <p className="text-sm text-gray-500">
+             您也可以通过 <span className="font-medium text-gray-700">站内信</span> 直接联系管理员
           </p>
         </div>
 

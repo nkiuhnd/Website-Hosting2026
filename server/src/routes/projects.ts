@@ -26,6 +26,16 @@ const uploadMiddleware = (req: AuthRequest, res: Response, next: any) => {
   });
 };
 
+// 安全防护：禁止上传的危险文件后缀
+const BLACKLISTED_EXTENSIONS = [
+    // 服务端脚本
+    '.php', '.jsp', '.asp', '.aspx', '.py', '.rb', '.pl', '.sh', '.bat', '.cmd', '.ps1',
+    // 可执行文件
+    '.exe', '.dll', '.so', '.bin', '.msi', '.com', '.vbs',
+    // 敏感配置文件
+    '.htaccess', '.env', '.git', '.DS_Store', '.sql', '.db'
+];
+
 const buildSiteUrl = (baseUrl: string, username: string, projectName: string, entryFile?: string | null) => {
   const trimmedBase = baseUrl.replace(/\/$/, '');
   const entrySuffix = entryFile && entryFile !== 'index.html'
@@ -62,10 +72,87 @@ async function injectFooter(filePath: string) {
             return;
         }
 
+        const baseUrl = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
+
         const footer = `
-<footer style="position:fixed; bottom:0; left:0; right:0; background:#f9fafb; text-align:center; padding:6px 0; font-size:12px; color:#666; border-top:1px solid #eee; z-index:9999;">
-  本网页由 <a href="https://yunmind.cn" target="_blank" style="color:#3b82f6; text-decoration:none;">yunmind.cn</a> 免费托管 · 拖拽 HTML 秒变公网网站，一键生成专属链接
-</footer>
+<!-- YunMind Footer -->
+<div id="yunmind-footer-container">
+  <footer style="position:fixed; bottom:0; left:0; right:0; background:#f9fafb; text-align:center; padding:6px 0; font-size:12px; color:#666; border-top:1px solid #eee; z-index:9999; font-family: sans-serif;">
+    本网页由 <a href="https://yunmind.cn" target="_blank" style="color:#3b82f6; text-decoration:none;">yunmind.cn</a> 免费托管 · 拖拽 HTML 秒变公网网站
+    <span style="margin-left:12px; color:#ccc;">|</span>
+    <a href="javascript:void(0)" onclick="window.showYunMindReport()" style="margin-left:12px; color:#ef4444; text-decoration:none;">违规举报</a>
+  </footer>
+
+  <div id="yunmind-report-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center; font-family: sans-serif;">
+    <div style="background:#fff; padding:20px; border-radius:8px; width:90%; max-width:400px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+      <h3 style="margin:0 0 15px 0; font-size:18px; color:#333;">违规举报</h3>
+      <div style="margin-bottom:15px;">
+        <label style="display:block; margin-bottom:5px; font-size:14px; color:#666;">举报类别</label>
+        <select id="yunmind-report-type" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; outline:none;">
+          <option value="政治敏感">政治敏感</option>
+          <option value="色情低俗">色情低俗</option>
+          <option value="诈骗信息">诈骗信息</option>
+          <option value="侵权投诉">侵权投诉</option>
+          <option value="其他违规">其他违规</option>
+        </select>
+      </div>
+      <div style="margin-bottom:15px;">
+        <label style="display:block; margin-bottom:5px; font-size:14px; color:#666;">具体说明</label>
+        <textarea id="yunmind-report-content" rows="4" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; outline:none; resize:none;" placeholder="请详细说明违规原因..."></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button onclick="window.hideYunMindReport()" style="padding:8px 16px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; color:#333;">取消</button>
+                <button onclick="window.submitYunMindReport()" id="yunmind-report-submit" style="padding:8px 16px; border:none; background:#ef4444; color:#fff; border-radius:4px; cursor:pointer;">提交举报</button>
+              </div>
+    </div>
+  </div>
+
+  <script>
+    window.showYunMindReport = function() {
+      document.getElementById('yunmind-report-modal').style.display = 'flex';
+    };
+    window.hideYunMindReport = function() {
+      document.getElementById('yunmind-report-modal').style.display = 'none';
+    };
+    window.submitYunMindReport = function() {
+      const type = document.getElementById('yunmind-report-type').value;
+      const content = document.getElementById('yunmind-report-content').value;
+      const submitBtn = document.getElementById('yunmind-report-submit');
+      
+      if (!content.trim()) {
+        alert('请填写举报具体说明');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = '提交中...';
+
+      fetch('${baseUrl}/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: type,
+          content: content,
+          targetUrl: window.location.href,
+          projectId: null // Server can infer this if needed
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert('举报已收到，我们会尽快处理。');
+        window.hideYunMindReport();
+      })
+      .catch(err => {
+        console.error('Report error:', err);
+        alert('提交失败，请稍后再试。');
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerText = '提交举报';
+      });
+    };
+  </script>
+</div>
 `;
         
         if (html.includes('</body>')) {
@@ -174,6 +261,13 @@ router.post('/', authenticateToken, uploadMiddleware, async (req: AuthRequest, r
              const fullPath = path.join(projectDir, entry.entryName);
              // Prevent Zip Slip again just in case
              if (!fullPath.startsWith(projectDir)) continue;
+
+             // 安全检查：黑名单文件过滤
+             const ext = path.extname(entry.entryName).toLowerCase();
+             if (BLACKLISTED_EXTENSIONS.includes(ext)) {
+                 console.warn(`[Security] Blocked blacklisted file: ${entry.entryName}`);
+                 continue; // 跳过该危险文件
+             }
 
              if (entry.isDirectory) {
                  await fs.ensureDir(fullPath);
@@ -341,30 +435,175 @@ router.get('/:id/download', authenticateToken, async (req: AuthRequest, res: Res
 });
 
 // Delete Project
-router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-  try {
-    const { id } = req.params as { id: string };
-    const user = req.user!;
+router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const id = String(req.params.id);
+        const userId = req.user!.id;
 
-    const project = await prisma.project.findFirst({
-      where: { id, userId: user.id }
-    });
+        const project = await prisma.project.findFirst({
+            where: { id, userId }
+        });
 
-    if (!project) return res.status(404).json({ message: 'Project not found' });
+        if (!project) return res.status(404).json({ message: 'Project not found' });
 
-    // Delete files
-    if (project.storagePath) {
-        await fs.remove(project.storagePath);
+        // Delete files from storage
+        if (project.storagePath && await fs.pathExists(project.storagePath)) {
+            await fs.remove(project.storagePath);
+        }
+
+        // Delete from database (Cascade will handle versions and visit logs)
+        await prisma.project.delete({ where: { id } });
+
+        res.json({ message: 'Project deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
     }
+});
 
-    // Delete db record
-    await prisma.project.delete({ where: { id } });
+// --- Messages ---
 
-    res.json({ message: 'Project deleted' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.post('/messages/send', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const fromUser = req.user!;
+        const toUsername = String(req.body?.toUsername || '').trim();
+        const title = String(req.body?.title || '').trim();
+        const content = String(req.body?.content || '').trim();
+
+        if (!toUsername) return res.status(400).json({ message: '收件人用户名不能为空' });
+        if (!content) return res.status(400).json({ message: '内容不能为空' });
+
+        const recipient = await prisma.user.findUnique({ where: { username: toUsername } });
+        if (!recipient) return res.status(404).json({ message: '未找到该用户' });
+        if (recipient.role === 'ADMIN') {
+            return res.status(400).json({ message: '给管理员请使用申诉通道' });
+        }
+
+        const finalTitle = title || `来自 ${fromUser.username} 的站内信`;
+        const finalContent = `来自 ${fromUser.username}：${content}`;
+        const message = await prisma.message.create({
+            data: {
+                userId: recipient.id,
+                title: finalTitle,
+                content: finalContent,
+                type: 'user'
+            }
+        });
+        res.json(message);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.post('/messages/appeal', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const fromUser = req.user!;
+        const title = String(req.body?.title || '').trim();
+        const content = String(req.body?.content || '').trim();
+
+        if (!content) return res.status(400).json({ message: '申诉理由不能为空' });
+
+        const admins = await prisma.user.findMany({
+            where: { role: 'ADMIN' },
+            select: { id: true }
+        });
+        if (admins.length === 0) {
+            return res.status(404).json({ message: '未找到管理员账号' });
+        }
+
+        const finalTitle = title || '用户申诉';
+        const finalContent = `来自 ${fromUser.username} 的申诉：${content}`;
+        await prisma.message.createMany({
+            data: admins.map(admin => ({
+                userId: admin.id,
+                title: finalTitle,
+                content: finalContent,
+                type: 'appeal'
+            }))
+        });
+
+        res.json({ message: '申诉已发送', count: admins.length });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Get user messages
+router.get('/messages/all', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user!.id;
+        const messages = await prisma.message.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(messages);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Get unread count
+router.get('/messages/unread-count', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user!.id;
+        const count = await prisma.message.count({
+            where: { userId, read: false }
+        });
+        res.json({ count });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Mark as read
+router.patch('/messages/:id/read', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const id = String(req.params.id);
+        const userId = req.user!.id;
+        await prisma.message.updateMany({
+            where: { id: parseInt(id, 10), userId },
+            data: { read: true }
+        });
+        res.json({ message: 'Marked as read' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Mark all as read
+router.post('/messages/read-all', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user!.id;
+        const scope = String(req.query.scope || '').trim();
+        const whereClause: any = { userId, read: false };
+        if (scope === 'user') {
+            whereClause.type = 'user';
+        } else if (scope === 'system') {
+            whereClause.type = { in: ['system', 'announcement'] };
+        } else if (scope) {
+            whereClause.type = scope;
+        }
+        await prisma.message.updateMany({
+            where: whereClause,
+            data: { read: true }
+        });
+        res.json({ message: 'All marked as read' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.delete('/messages/:id', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const id = parseInt(String(req.params.id), 10);
+        const userId = req.user!.id;
+        await prisma.message.deleteMany({
+            where: { id, userId }
+        });
+        res.json({ message: 'Deleted' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 export default router;

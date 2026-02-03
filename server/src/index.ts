@@ -8,21 +8,34 @@ import iconv from 'iconv-lite';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import adminRoutes from './routes/admin';
+import reportRoutes from './routes/reports';
 import prisma from './prisma';
-import { createDefaultAdmin } from './utils/initAdmin';
+import { createDefaultAdmin, setupTestUsers } from './utils/initAdmin';
 
 dotenv.config();
 
 const app = express();
 const PORT = Number(String(process.env.PORT || '').trim()) || 4000;
 
-// Initialize Admin
+// Initialize Admin and Test Users
 createDefaultAdmin();
+setupTestUsers();
 
 app.use(morgan('combined')); // Log requests
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 安全防护：设置安全响应头
+app.use((req, res, next) => {
+    // 禁止 MIME 类型嗅探
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // 防止点击劫持
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    // 保护 Referrer 隐私
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+});
 
 // Trust Proxy for getting correct IP
 app.set('trust proxy', true);
@@ -57,11 +70,16 @@ app.use(checkReferer);
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reports', reportRoutes);
 
 const serveProjectFile = async (req: Request, username: string, projectName: string, filePath: string, res: Response) => {
   try {
     const user = await prisma.user.findUnique({ where: { username } });
     if (!user) return res.status(404).send('User not found');
+
+    if (user.status === 'BANNED') {
+        return res.status(403).send('<div style="display:flex;justify-content:center;align-items:center;height:100vh;text-align:center;"><div><h1>Account Suspended</h1><p>该账号已被封禁</p></div></div>');
+    }
 
     const project = await prisma.project.findFirst({
       where: { userId: user.id, name: projectName }
@@ -70,7 +88,7 @@ const serveProjectFile = async (req: Request, username: string, projectName: str
     if (!project) return res.status(404).send('Project not found');
 
     if (project.status === 'DISABLED') {
-        return res.status(403).send('Project has been disabled by admin');
+        return res.status(403).send('<div style="display:flex;justify-content:center;align-items:center;height:100vh;text-align:center;"><div><h1>Project Disabled</h1><p>该项目因违规已被封禁</p></div></div>');
     }
 
     // Increment visit count and log visit
@@ -195,6 +213,18 @@ const serveProjectFile = async (req: Request, username: string, projectName: str
 app.use('/sites/:username/:projectName', async (req, res, next) => {
     if (req.method !== 'GET') return next();
 
+    // 安全增强：强制子域名访问 (生产环境下)
+    // 如果是通过主站域名+路径访问的，且环境配置了主域名，则重定向到子域名以实现源隔离
+    const hostHeader = req.get('host') || '';
+    const mainDomain = process.env.MAIN_DOMAIN; // 假设环境变量中有主域名，如 yunmind.cn
+    
+    if (mainDomain && hostHeader.includes(mainDomain) && !hostHeader.startsWith(req.params.username + '.')) {
+        const protocol = req.protocol;
+        const projectName = req.params.projectName;
+        const restPath = req.path === '/' ? '' : req.path;
+        return res.redirect(`${protocol}://${req.params.username}.${mainDomain}/${projectName}${restPath}`);
+    }
+
     // Check if we need to redirect to add trailing slash
     // req.path is relative to the mount point.
     // When mounting at /sites/:u/:p, both /sites/:u/:p and /sites/:u/:p/ result in req.path = '/'
@@ -234,31 +264,54 @@ app.use('/:projectName', async (req, res, next) => {
     if (req.method !== 'GET') return next();
     const hostHeader = req.get('host') || '';
     const hostname = hostHeader.split(':')[0];
+    
+    // Improved Subdomain Check
+    const mainDomain = process.env.MAIN_DOMAIN;
+    if (mainDomain && (hostname === mainDomain || hostname === `www.${mainDomain}`)) return next();
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return next();
+
     const parts = hostname.split('.');
-    if (parts.length < 3) return next();
+    if (parts.length < 2) return next(); // Allow sub.localhost (2 parts) or sub.domain.com (3+ parts)
+
     const username = parts[0];
+    // Exclude common non-user subdomains if not caught by mainDomain check
     if (username === 'www') return next();
+    
     const projectName = req.params.projectName;
     if (!username || !projectName) return next();
     if (projectName === 'api' || projectName === 'sites' || projectName === 'assets' || projectName === 'favicon.ico' || projectName === 'logo.svg') return next();
+    
     if (req.path === '/' && !req.originalUrl.split('?')[0].endsWith('/')) {
         return res.redirect(req.originalUrl + '/');
     }
+    
     if (req.path === '/') {
         try {
             const user = await prisma.user.findUnique({ where: { username } });
             if (user) {
+                // Check user status immediately
+                if (user.status === 'BANNED') {
+                     return res.status(403).send('<h1>Account Suspended / 账号已封禁</h1>');
+                }
+                
                 const project = await prisma.project.findFirst({
                     where: { userId: user.id, name: projectName }
                 });
-                if (project && project.entryFile && project.entryFile !== 'index.html') {
-                    return res.redirect(req.originalUrl + project.entryFile);
+                
+                if (project) {
+                    if (project.status === 'DISABLED') {
+                        return res.status(403).send('<h1>Project Disabled / 项目已封禁</h1>');
+                    }
+                    if (project.entryFile && project.entryFile !== 'index.html') {
+                        return res.redirect(req.originalUrl + project.entryFile);
+                    }
                 }
             }
         } catch (e) {
             console.error('Error finding project entry (subdomain):', e);
         }
     }
+    
     const decodedPath = decodeURIComponent(req.path);
     const filePath = decodedPath === '/' ? 'index.html' : decodedPath.substring(1);
     console.log(`[Request] Subdomain user: ${username}, Project: ${projectName}, Path: ${req.path}, Decoded: ${decodedPath}, FilePath: ${filePath}`);

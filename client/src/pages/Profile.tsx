@@ -73,8 +73,11 @@ export default function Profile() {
       });
       setPassMsg({ type: 'success', text: '密码修改成功' });
       setPassForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (err: any) {
-      setPassMsg({ type: 'error', text: err.response?.data?.message || '密码修改失败' });
+    } catch (err: unknown) {
+      const data = (err as { response?: { data?: unknown } } | null | undefined)?.response?.data;
+      const rawMessage = (data && typeof data === 'object' && 'message' in data) ? (data as { message?: unknown }).message : undefined;
+      const message = typeof rawMessage === 'string' ? rawMessage : undefined;
+      setPassMsg({ type: 'error', text: message || '密码修改失败' });
     } finally {
       setPassLoading(false);
     }

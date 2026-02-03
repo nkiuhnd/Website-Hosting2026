@@ -9,6 +9,8 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminProjects from './pages/admin/AdminProjects';
+import AdminReports from './pages/admin/AdminReports';
+import AdminMessages from './pages/admin/AdminMessages';
 import ForgotPassword from './pages/ForgotPassword.tsx';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/useAuth';
@@ -58,6 +60,8 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="projects" element={<AdminProjects />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="messages" element={<AdminMessages />} />
           </Route>
 
           <Route path="/" element={<Home />} />

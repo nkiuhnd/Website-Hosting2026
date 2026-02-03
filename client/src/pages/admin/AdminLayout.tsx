@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
-import { LayoutDashboard, Users, FileText, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, LogOut, AlertTriangle, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 
@@ -29,6 +29,12 @@ export default function AdminLayout() {
           </Link>
           <Link to="/admin/projects" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition">
             <FileText size={20} /> {t('common.projects')}
+          </Link>
+          <Link to="/admin/reports" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition">
+            <AlertTriangle size={20} /> 违规举报
+          </Link>
+          <Link to="/admin/messages" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition">
+            <Mail size={20} /> 站内信
           </Link>
         </nav>
         <div className="p-4 border-t border-gray-800 space-y-4">

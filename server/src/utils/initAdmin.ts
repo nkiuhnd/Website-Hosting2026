@@ -45,3 +45,42 @@ export const createDefaultAdmin = async () => {
     console.error('Error creating default admin:', error);
   }
 };
+
+export const setupTestUsers = async () => {
+  const testUsers = [
+    { username: 'a1', password: '12345', phone: '15169378878' },
+    { username: 'a2', password: '12345', phone: '15169378870' } // Modified phone to ensure uniqueness
+  ];
+
+  console.log('Checking for test users...');
+
+  for (const userData of testUsers) {
+    try {
+      const existingUser = await prisma.user.findUnique({ where: { username: userData.username } });
+      if (!existingUser) {
+        // Check if phone number is already taken
+        if (userData.phone) {
+            const phoneUser = await prisma.user.findUnique({ where: { phone: userData.phone } });
+            if (phoneUser) {
+                console.warn(`[TestUser] Phone ${userData.phone} already taken by ${phoneUser.username}. Skipping phone for ${userData.username}.`);
+                userData.phone = undefined as any; 
+            }
+        }
+
+        const hashedPassword = await bcrypt.hash(userData.password, 10);
+        await prisma.user.create({
+          data: {
+            username: userData.username,
+            password: hashedPassword,
+            phone: userData.phone,
+            status: 'ACTIVE',
+            role: 'USER'
+          }
+        });
+        console.log(`[TestUser] Created user: ${userData.username}`);
+      }
+    } catch (error) {
+      console.error(`[TestUser] Error creating user ${userData.username}:`, error);
+    }
+  }
+};

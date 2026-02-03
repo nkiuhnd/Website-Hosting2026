@@ -28,6 +28,10 @@ interface VisitLog {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [recentVisits, setRecentVisits] = useState<VisitLog[]>([]);
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementContent, setAnnouncementContent] = useState('');
+  const [announcementSending, setAnnouncementSending] = useState(false);
+  const [announcementFeedback, setAnnouncementFeedback] = useState<string | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -43,6 +47,33 @@ export default function AdminDashboard() {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const sendAnnouncement = async () => {
+    if (announcementSending) return;
+    const content = announcementContent.trim();
+    const title = announcementTitle.trim();
+    if (!content) {
+      setAnnouncementFeedback('公告内容不能为空');
+      return;
+    }
+    setAnnouncementSending(true);
+    setAnnouncementFeedback(null);
+    try {
+      await api.post('/admin/announcements', { title, content });
+      setAnnouncementFeedback('公告已发布');
+      setAnnouncementTitle('');
+      setAnnouncementContent('');
+    } catch (err: unknown) {
+      const data = (err as { response?: { data?: unknown } } | null | undefined)?.response?.data;
+      const rawMessage = (data && typeof data === 'object' && 'message' in data)
+        ? (data as { message?: unknown }).message
+        : undefined;
+      const message = typeof rawMessage === 'string' ? rawMessage : undefined;
+      setAnnouncementFeedback(message || '发布失败');
+    } finally {
+      setAnnouncementSending(false);
+    }
   };
 
   return (
@@ -112,6 +143,44 @@ export default function AdminDashboard() {
                     </tbody>
                 </table>
             </div>
+        </div>
+      </div>
+
+      <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 className="text-lg font-bold mb-4">发布公告</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">标题</label>
+            <input
+              value={announcementTitle}
+              onChange={(e) => setAnnouncementTitle(e.target.value)}
+              placeholder="系统公告"
+              className="border p-2 rounded w-full focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-gray-700">内容</label>
+          <textarea
+            value={announcementContent}
+            onChange={(e) => setAnnouncementContent(e.target.value)}
+            rows={4}
+            className="border p-2 rounded w-full focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+          />
+        </div>
+        <div className="mt-4 flex items-center gap-4">
+          <button
+            onClick={sendAnnouncement}
+            disabled={announcementSending}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 transition"
+          >
+            {announcementSending ? '发布中...' : '发布公告'}
+          </button>
+          {announcementFeedback && (
+            <span className={`text-sm ${announcementFeedback.includes('失败') ? 'text-red-600' : 'text-green-600'}`}>
+              {announcementFeedback}
+            </span>
+          )}
         </div>
       </div>
     </div>

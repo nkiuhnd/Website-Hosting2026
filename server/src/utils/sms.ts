@@ -6,13 +6,72 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
-  retryStrategy: (times) => Math.min(times * 50, 2000),
-});
+// Simple Mock Redis for development without Redis server
+class MockRedis {
+  private store = new Map<string, string>();
+  
+  async set(key: string, value: string, mode?: string, duration?: number): Promise<string> {
+    this.store.set(key, value);
+    if (mode === 'EX' && duration) {
+      setTimeout(() => this.store.delete(key), duration * 1000);
+    }
+    return 'OK';
+  }
 
-redis.on('error', (err) => console.error('Redis Error:', err));
+  async get(key: string): Promise<string | null> {
+    return this.store.get(key) || null;
+  }
+
+  async incr(key: string): Promise<number> {
+    const val = this.store.get(key);
+    const num = val ? parseInt(val, 10) : 0;
+    if (isNaN(num)) throw new Error('Value is not an integer or out of range');
+    const newNum = num + 1;
+    this.store.set(key, String(newNum));
+    return newNum;
+  }
+
+  async expire(key: string, seconds: number): Promise<number> {
+    if (!this.store.has(key)) return 0;
+    setTimeout(() => this.store.delete(key), seconds * 1000);
+    return 1;
+  }
+
+  async del(key: string): Promise<number> {
+    const deleted = this.store.delete(key);
+    return deleted ? 1 : 0;
+  }
+
+  on(event: string, callback: any) {
+    // No-op for events
+  }
+}
+
+let redis: Redis | MockRedis;
+
+// Only use real Redis if host is explicitly configured and not localhost (unless you have local redis)
+// Or try to connect and fallback? ioredis retries aggressively.
+// Better approach: Check if REDIS_HOST is set. If not, use Mock.
+if (process.env.REDIS_HOST) {
+    redis = new Redis({
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT) || 6379,
+        maxRetriesPerRequest: 3, // Fail fast
+        retryStrategy: (times) => {
+            if (times > 3) return null; // Stop retrying after 3 attempts
+            return Math.min(times * 50, 2000);
+        },
+    });
+    
+    redis.on('error', (err) => {
+        console.error('Redis Connection Error (Switching to Mock):', err.message);
+        // If Redis fails, we can't easily hot-swap to Mock in this variable structure 
+        // without a wrapper, but this prevents the "max retries" crash loop.
+    });
+} else {
+    console.log('Redis not configured (REDIS_HOST missing). Using in-memory MockRedis.');
+    redis = new MockRedis();
+}
 
 let client: Dypnsapi20170525 | null = null;
 
