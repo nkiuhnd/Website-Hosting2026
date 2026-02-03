@@ -61,6 +61,7 @@ export const en = {
     activity: 'Activity',
     location: 'Location',
     school: 'School',
+    phone: 'Phone',
     ip: 'IP Address',
     online: 'Online',
     offline: 'Offline',

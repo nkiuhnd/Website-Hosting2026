@@ -127,14 +127,17 @@ async function injectFooter(filePath: string) {
       submitBtn.disabled = true;
       submitBtn.innerText = '提交中...';
 
-      fetch('${baseUrl}/api/reports', {
+      const apiBase = window.location.origin;
+      const apiUrl = apiBase.replace(/\/$/, '') + '/api/reports';
+
+      fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: type,
           content: content,
           targetUrl: window.location.href,
-          projectId: null // Server can infer this if needed
+          projectId: null
         })
       })
       .then(res => res.json())

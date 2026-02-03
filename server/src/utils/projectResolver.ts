@@ -4,15 +4,19 @@ import prisma from '../prisma';
 export const resolveProjectFromUrl = async (url: string): Promise<string | null> => {
     try {
         console.log(`[Resolver] Attempting to resolve URL: ${url}`);
-        const urlObj = new URL(url);
+        const urlObj = new URL(url, 'http://localhost');
         const hostname = urlObj.hostname;
         const pathname = urlObj.pathname;
-        
+
         let username: string | null = null;
         let projectName: string | null = null;
 
-        const mainDomain = process.env.MAIN_DOMAIN?.split(':')[0]; // e.g., yunmind.cn or localhost
-        console.log(`[Resolver] Hostname: ${hostname}, MainDomain: ${mainDomain}`);
+        const rawMainDomain = String(process.env.MAIN_DOMAIN || '').trim();
+        const normalizedMainDomain = rawMainDomain
+            .replace(/^https?:\/\//, '')
+            .replace(/^www\./, '')
+            .split(':')[0];
+        console.log(`[Resolver] Hostname: ${hostname}, MainDomain: ${normalizedMainDomain}`);
 
         // 1. Path based: /sites/:username/:projectName
         const sitesMatch = pathname.match(/^\/sites\/([^/]+)\/([^/]+)/);
@@ -31,9 +35,8 @@ export const resolveProjectFromUrl = async (url: string): Promise<string | null>
                 console.log(`[Resolver] Direct IP/Localhost access, no subdomain`);
             } else {
                  // Production domain
-                 if (mainDomain && hostname.endsWith(mainDomain)) {
-                     // user.maindomain.com
-                     const sub = hostname.replace(`.${mainDomain}`, '');
+                 if (normalizedMainDomain && hostname.endsWith(normalizedMainDomain)) {
+                     const sub = hostname.replace(`.${normalizedMainDomain}`, '');
                      if (sub && sub !== 'www') {
                          username = sub;
                          console.log(`[Resolver] Subdomain match (mainDomain): ${username}`);

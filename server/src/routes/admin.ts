@@ -207,6 +207,7 @@ router.get('/users', async (req: Request, res: Response) => {
         let usersWithStats = users.map((user: any) => ({
             id: user.id,
             username: user.username,
+            phone: user.phone,
             role: user.role,
             status: user.status,
             lastLoginAt: user.lastLoginAt,

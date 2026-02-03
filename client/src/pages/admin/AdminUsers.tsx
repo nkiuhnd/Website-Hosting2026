@@ -9,6 +9,7 @@ type SortDirection = 'asc' | 'desc';
 interface AdminUserRow {
   id: string;
   username: string;
+  phone?: string | null;
   role: string;
   status: string;
   lastLoginAt: string | null;
@@ -204,6 +205,9 @@ export default function AdminUsers() {
                 <div className="flex items-center">{t('admin.user')} <SortIcon columnKey="username" sortKey={sortConfig.key} sortDirection={sortConfig.direction} /></div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {t('admin.phone')}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {t('admin.location')} / {t('admin.school')}
               </th>
               <th 
@@ -239,6 +243,9 @@ export default function AdminUsers() {
                     )}
                   </div>
                   <div className="text-xs text-gray-500">{user.role}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {user.phone ? user.phone : <span className="text-gray-300">-</span>}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div className="flex flex-col">
@@ -307,7 +314,7 @@ export default function AdminUsers() {
             ))}
             {users.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                   {t('admin.no_users_found')}
                 </td>
               </tr>

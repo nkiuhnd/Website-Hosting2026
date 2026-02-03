@@ -64,6 +64,7 @@ export const zh = {
     activity: '活跃度',
     location: '所在地',
     school: '学校',
+    phone: '手机号',
     ip: 'IP 地址',
     online: '在线',
     offline: '离线',

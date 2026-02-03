@@ -8,21 +8,22 @@ const router = Router();
 router.post('/', async (req: Request, res: Response) => {
     try {
         const { type, content, targetUrl, projectId } = req.body;
+        const finalTargetUrl = String(targetUrl || '').trim() || String(req.get('referer') || '').trim();
 
-        if (!type || !content || !targetUrl) {
+        if (!type || !content || !finalTargetUrl) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
         let finalProjectId = projectId;
-        if (!finalProjectId && targetUrl) {
-            finalProjectId = await resolveProjectFromUrl(targetUrl);
+        if (!finalProjectId) {
+            finalProjectId = await resolveProjectFromUrl(finalTargetUrl);
         }
 
         const report = await prisma.report.create({
             data: {
                 type,
                 content,
-                targetUrl,
+                targetUrl: finalTargetUrl,
                 projectId: finalProjectId,
                 ip: req.ip || req.socket.remoteAddress || 'unknown',
             }
