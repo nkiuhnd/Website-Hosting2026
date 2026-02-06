@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
 import api from '../../api';
 import { useTranslation } from 'react-i18next';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Legend } from 'recharts';
+import { Users, Folder, MousePointer, HardDrive, Zap, Globe, Activity } from 'lucide-react';
+
+interface ChartData {
+  date: string;
+  visits: number;
+  users: number;
+  projects: number;
+}
 
 interface AdminStats {
   totalUsers: number;
@@ -10,6 +19,7 @@ interface AdminStats {
   totalStorage: number;
   activeUsersToday: number;
   currentActiveUsers?: number;
+  chartData?: ChartData[];
 }
 
 interface VisitLog {
@@ -39,7 +49,7 @@ export default function AdminDashboard() {
     api.get('/admin/visit-logs?limit=10').then(res => setRecentVisits(res.data.logs)).catch(console.error);
   }, []);
 
-  if (!stats) return <div>{t('common.loading')}</div>;
+  if (!stats) return <div className="p-8 flex justify-center">{t('common.loading')}</div>;
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -65,122 +75,222 @@ export default function AdminDashboard() {
       setAnnouncementTitle('');
       setAnnouncementContent('');
     } catch (err: unknown) {
-      const data = (err as { response?: { data?: unknown } } | null | undefined)?.response?.data;
-      const rawMessage = (data && typeof data === 'object' && 'message' in data)
-        ? (data as { message?: unknown }).message
-        : undefined;
-      const message = typeof rawMessage === 'string' ? rawMessage : undefined;
-      setAnnouncementFeedback(message || '发布失败');
+        const data = (err as { response?: { data?: unknown } } | null | undefined)?.response?.data;
+        const rawMessage = (data && typeof data === 'object' && 'message' in data)
+          ? (data as { message?: unknown }).message
+          : undefined;
+        const message = typeof rawMessage === 'string' ? rawMessage : undefined;
+        setAnnouncementFeedback(message || '发布失败');
     } finally {
       setAnnouncementSending(false);
     }
   };
 
+  const StatCard = ({ title, value, subValue, icon: Icon, colorClass, bgClass }: any) => (
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between hover:shadow-md transition-shadow">
+      <div>
+        <p className="text-sm text-gray-500 font-medium mb-1">{title}</p>
+        <h3 className={`text-2xl font-bold ${colorClass}`}>{value}</h3>
+        {subValue && <p className="text-xs text-gray-400 mt-1">{subValue}</p>}
+      </div>
+      <div className={`p-3 rounded-lg ${bgClass}`}>
+        <Icon className={`w-6 h-6 ${colorClass}`} />
+      </div>
+    </div>
+  );
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{t('admin.system_overview')}</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-800">{t('admin.system_overview')}</h2>
+        <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
+           {new Date().toLocaleDateString()}
+        </span>
+      </div>
+
+      {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <p className="text-sm text-gray-500 font-medium">{t('admin.total_users')}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalUsers}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <p className="text-sm text-gray-500 font-medium">{t('admin.total_projects')}</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{stats.totalProjects}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <p className="text-sm text-gray-500 font-medium">{t('admin.total_visits')}</p>
-          <div className="flex items-end gap-2">
-             <p className="text-3xl font-bold text-green-600 mt-2">{stats.totalVisits}</p>
-             {stats.visitsToday !== undefined && (
-                 <span className="text-sm text-gray-500 mb-1"> (今日: {stats.visitsToday})</span>
-             )}
+        <StatCard
+          title={t('admin.total_users')}
+          value={stats.totalUsers}
+          subValue={`今日活跃: ${stats.activeUsersToday}`}
+          icon={Users}
+          colorClass="text-blue-600"
+          bgClass="bg-blue-50"
+        />
+        <StatCard
+          title={t('admin.total_projects')}
+          value={stats.totalProjects}
+          subValue="托管项目总数"
+          icon={Folder}
+          colorClass="text-indigo-600"
+          bgClass="bg-indigo-50"
+        />
+        <StatCard
+          title={t('admin.total_visits')}
+          value={stats.totalVisits.toLocaleString()}
+          subValue={`今日: ${stats.visitsToday}`}
+          icon={MousePointer}
+          colorClass="text-green-600"
+          bgClass="bg-green-50"
+        />
+        <StatCard
+          title={t('admin.storage_used')}
+          value={formatBytes(stats.totalStorage)}
+          subValue="总占用空间"
+          icon={HardDrive}
+          colorClass="text-purple-600"
+          bgClass="bg-purple-50"
+        />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Trend Chart (Visits) */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-500" />
+              近7天访问趋势
+            </h3>
+          </div>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.chartData || []}>
+                <defs>
+                  <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                  itemStyle={{ color: '#374151' }}
+                />
+                <Area type="monotone" dataKey="visits" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorVisits)" name="访问量" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <p className="text-sm text-gray-500 font-medium">{t('admin.storage_used')}</p>
-          <p className="text-3xl font-bold text-purple-600 mt-2">{formatBytes(stats.totalStorage)}</p>
+
+        {/* Growth Chart (Users & Projects) */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-500" />
+              新增趋势
+            </h3>
+          </div>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.chartData || []}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
+                <Tooltip 
+                  cursor={{fill: 'transparent'}}
+                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                />
+                <Legend verticalAlign="top" height={36} iconType="circle" />
+                <Bar dataKey="users" name="新用户" fill="#8B5CF6" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="projects" name="新项目" fill="#10B981" radius={[4, 4, 0, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
-      
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-bold mb-4">{t('admin.activity')}</h3>
-            <p className="text-gray-600">{t('admin.active_users_today')}: <span className="font-bold text-gray-900">{stats.activeUsersToday}</span></p>
-            {typeof stats.currentActiveUsers === 'number' && (
-            <p className="text-gray-600 mt-2">{t('admin.online')}: <span className="font-bold text-gray-900">{stats.currentActiveUsers}</span></p>
-            )}
+
+      {/* Bottom Section: Active Status & Recent Visits */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Realtime Status */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-indigo-500" />
+                实时状态
+            </h3>
+            <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">当前在线用户</span>
+                    <span className="text-2xl font-bold text-green-600">{stats.currentActiveUsers || 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">今日活跃用户</span>
+                    <span className="text-2xl font-bold text-blue-600">{stats.activeUsersToday}</span>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <p className="text-sm text-blue-800 mb-2 font-medium">系统公告</p>
+                    <div className="space-y-3">
+                        <div className="bg-white rounded-lg border border-blue-200 shadow-sm overflow-hidden">
+                            <input
+                                value={announcementTitle}
+                                onChange={(e) => setAnnouncementTitle(e.target.value)}
+                                placeholder="标题"
+                                className="w-full text-sm px-4 py-3 border-b border-gray-100 focus:outline-none focus:bg-blue-50/30 transition-colors placeholder-gray-400 font-medium"
+                            />
+                            <textarea
+                                value={announcementContent}
+                                onChange={(e) => setAnnouncementContent(e.target.value)}
+                                rows={3}
+                                placeholder="内容..."
+                                className="w-full text-sm px-4 py-3 focus:outline-none focus:bg-blue-50/30 transition-colors resize-none placeholder-gray-400 block"
+                            />
+                        </div>
+                        <div className="flex justify-between items-center px-1">
+                            <span className={`text-xs ${announcementFeedback?.includes('失败') ? 'text-red-500' : 'text-green-500'}`}>
+                                {announcementFeedback}
+                            </span>
+                            <button
+                                onClick={sendAnnouncement}
+                                disabled={announcementSending}
+                                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 disabled:opacity-50 transition"
+                            >
+                                {announcementSending ? '发送中' : '发布'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-bold mb-4">最近访问记录</h3>
+        {/* Recent Visits Table */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800">最近访问记录</h3>
+                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">查看全部</button>
+            </div>
             <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                     <thead>
-                        <tr className="text-left text-gray-500 border-b">
-                            <th className="pb-2">时间</th>
-                            <th className="pb-2">项目</th>
-                            <th className="pb-2">IP</th>
+                        <tr className="text-left text-gray-400 border-b border-gray-100">
+                            <th className="pb-3 font-medium pl-2">时间</th>
+                            <th className="pb-3 font-medium">项目 / 用户</th>
+                            <th className="pb-3 font-medium">来源 IP</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-50">
                         {recentVisits.map(log => (
-                            <tr key={log.id} className="border-b last:border-0">
-                                <td className="py-2">{new Date(log.createdAt).toLocaleString()}</td>
-                                <td className="py-2">
-                                    <span className="font-medium">{log.project.user.username}</span>
-                                    <span className="text-gray-400">/</span>
-                                    <span>{log.project.name}</span>
+                            <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="py-3 pl-2 text-gray-500">{new Date(log.createdAt).toLocaleString()}</td>
+                                <td className="py-3">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-gray-800">{log.project.name}</span>
+                                        <span className="text-xs text-gray-400">{log.project.user.username}</span>
+                                    </div>
                                 </td>
-                                <td className="py-2 font-mono text-xs">{log.ip}</td>
+                                <td className="py-3 font-mono text-xs text-gray-500">{log.ip}</td>
                             </tr>
                         ))}
                         {recentVisits.length === 0 && (
                             <tr>
-                                <td colSpan={3} className="py-4 text-center text-gray-400">暂无访问记录</td>
+                                <td colSpan={3} className="py-8 text-center text-gray-400">暂无访问记录</td>
                             </tr>
                         )}
                     </tbody>
                 </table>
             </div>
-        </div>
-      </div>
-
-      <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-bold mb-4">发布公告</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">标题</label>
-            <input
-              value={announcementTitle}
-              onChange={(e) => setAnnouncementTitle(e.target.value)}
-              placeholder="系统公告"
-              className="border p-2 rounded w-full focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-        </div>
-        <div className="mt-4">
-          <label className="block text-sm font-medium mb-1 text-gray-700">内容</label>
-          <textarea
-            value={announcementContent}
-            onChange={(e) => setAnnouncementContent(e.target.value)}
-            rows={4}
-            className="border p-2 rounded w-full focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-          />
-        </div>
-        <div className="mt-4 flex items-center gap-4">
-          <button
-            onClick={sendAnnouncement}
-            disabled={announcementSending}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 transition"
-          >
-            {announcementSending ? '发布中...' : '发布公告'}
-          </button>
-          {announcementFeedback && (
-            <span className={`text-sm ${announcementFeedback.includes('失败') ? 'text-red-600' : 'text-green-600'}`}>
-              {announcementFeedback}
-            </span>
-          )}
         </div>
       </div>
     </div>

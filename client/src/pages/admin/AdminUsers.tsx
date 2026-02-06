@@ -32,8 +32,19 @@ function SortIcon(props: { columnKey: string; sortKey: string; sortDirection: So
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUserRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: SortDirection }>({ key: 'createdAt', direction: 'desc' });
+  const [filters, setFilters] = useState({
+    lastActiveAfter: '', // '24h', '7d', '30d'
+    minStorage: '', // MB
+    maxStorage: '', // MB
+    minProjectCount: '',
+    maxProjectCount: ''
+  });
+  
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [verifyCode, setVerifyCode] = useState('');
@@ -53,14 +64,41 @@ export default function AdminUsers() {
   }, [countdown]);
 
   const fetchUsers = useCallback(() => {
+    // Calculate date string for lastActiveAfter
+    let activeDateStr = '';
+    if (filters.lastActiveAfter) {
+      const now = new Date();
+      if (filters.lastActiveAfter === '24h') now.setDate(now.getDate() - 1);
+      if (filters.lastActiveAfter === '7d') now.setDate(now.getDate() - 7);
+      if (filters.lastActiveAfter === '30d') now.setDate(now.getDate() - 30);
+      activeDateStr = now.toISOString();
+    }
+
     api.get('/admin/users', {
       params: {
         search,
+        page,
+        limit: pageSize,
         sortBy: sortConfig.key,
-        order: sortConfig.direction
+        order: sortConfig.direction,
+        lastActiveAfter: activeDateStr || undefined,
+        minStorage: filters.minStorage || undefined,
+        maxStorage: filters.maxStorage || undefined,
+        minProjectCount: filters.minProjectCount || undefined,
+        maxProjectCount: filters.maxProjectCount || undefined
       }
-    }).then(res => setUsers(res.data)).catch(console.error);
-  }, [search, sortConfig]);
+    }).then(res => {
+      // Backend now returns { data, total, page, totalPages }
+      // Or fallback to array if older backend (handled for safety)
+      if (res.data.data) {
+          setUsers(res.data.data);
+          setTotal(res.data.total);
+      } else if (Array.isArray(res.data)) {
+          setUsers(res.data);
+          setTotal(res.data.length);
+      }
+    }).catch(console.error);
+  }, [search, sortConfig, page, pageSize, filters]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -68,6 +106,64 @@ export default function AdminUsers() {
     }, 300);
     return () => clearTimeout(delayDebounceFn);
   }, [fetchUsers]);
+
+  const exportData = async () => {
+    try {
+      // Fetch all data for export
+      const res = await api.get('/admin/users', {
+        params: {
+          search,
+          limit: 'all', // Backend should handle this to return all
+          sortBy: sortConfig.key,
+          order: sortConfig.direction,
+          lastActiveAfter: filters.lastActiveAfter ? (() => {
+             const now = new Date();
+             if (filters.lastActiveAfter === '24h') now.setDate(now.getDate() - 1);
+             if (filters.lastActiveAfter === '7d') now.setDate(now.getDate() - 7);
+             if (filters.lastActiveAfter === '30d') now.setDate(now.getDate() - 30);
+             return now.toISOString();
+          })() : undefined,
+          minStorage: filters.minStorage || undefined,
+          maxStorage: filters.maxStorage || undefined,
+          minProjectCount: filters.minProjectCount || undefined,
+          maxProjectCount: filters.maxProjectCount || undefined
+        }
+      });
+      
+      const dataToExport = res.data.data || res.data;
+      if (!Array.isArray(dataToExport)) return;
+
+      const csvContent = [
+        ['ID', '用户名', '手机号', '角色', '状态', '注册时间', '最后登录', '省份', '城市', '学校', '项目数', '总占用空间(B)'],
+        ...dataToExport.map((u: AdminUserRow) => [
+          u.id,
+          u.username,
+          u.phone || '',
+          u.role,
+          u.status,
+          new Date(u.createdAt).toLocaleString(),
+          u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '',
+          u.province || '',
+          u.city || '',
+          u.school || '',
+          u.projectCount,
+          u.totalSize
+        ])
+      ].map(e => e.join(',')).join('\n');
+
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `users_export_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('Export failed', e);
+      alert(t('common.action_failed'));
+    }
+  };
 
   const toggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'ACTIVE' ? 'BANNED' : 'ACTIVE';
@@ -180,17 +276,104 @@ export default function AdminUsers() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">{t('admin.user_management')}</h2>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder={t('admin.search_users')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-800">{t('admin.user_management')}</h2>
+          <div className="flex gap-2">
+            <button
+                onClick={exportData}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+            >
+                <FolderOpen size={18} />
+                导出数据
+            </button>
+          </div>
+        </div>
+        
+        <div className="flex flex-col gap-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={t('admin.search_users')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-64"
+              />
+              <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+            </div>
+
+            <select
+                className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                value={filters.lastActiveAfter}
+                onChange={(e) => setFilters(prev => ({ ...prev, lastActiveAfter: e.target.value }))}
+            >
+                <option value="">所有登录时间</option>
+                <option value="24h">最近24小时登录</option>
+                <option value="7d">最近7天登录</option>
+                <option value="30d">最近30天登录</option>
+            </select>
+            
+            <div className="flex items-center gap-2 ml-auto">
+                <span className="text-gray-600 text-sm">每页:</span>
+                <select
+                    className="px-2 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={pageSize}
+                    onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setPage(1);
+                    }}
+                >
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-6 items-center border-t pt-4">
+            <div className="flex items-center gap-2">
+                <span className="text-gray-600 text-sm">用量(MB):</span>
+                <div className="flex items-center gap-1">
+                  <input
+                      type="number"
+                      placeholder="Min"
+                      value={filters.minStorage}
+                      onChange={(e) => setFilters(prev => ({ ...prev, minStorage: e.target.value }))}
+                      className="px-3 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none w-20 text-sm"
+                  />
+                  <span className="text-gray-400">-</span>
+                  <input
+                      type="number"
+                      placeholder="Max"
+                      value={filters.maxStorage}
+                      onChange={(e) => setFilters(prev => ({ ...prev, maxStorage: e.target.value }))}
+                      className="px-3 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none w-20 text-sm"
+                  />
+                </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+                <span className="text-gray-600 text-sm">项目数量:</span>
+                <div className="flex items-center gap-1">
+                  <input
+                      type="number"
+                      placeholder="Min"
+                      value={filters.minProjectCount}
+                      onChange={(e) => setFilters(prev => ({ ...prev, minProjectCount: e.target.value }))}
+                      className="px-3 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none w-20 text-sm"
+                  />
+                  <span className="text-gray-400">-</span>
+                  <input
+                      type="number"
+                      placeholder="Max"
+                      value={filters.maxProjectCount}
+                      onChange={(e) => setFilters(prev => ({ ...prev, maxProjectCount: e.target.value }))}
+                      className="px-3 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none w-20 text-sm"
+                  />
+                </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -202,25 +385,26 @@ export default function AdminUsers() {
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('username')}
               >
-                <div className="flex items-center">{t('admin.user')} <SortIcon columnKey="username" sortKey={sortConfig.key} sortDirection={sortConfig.direction} /></div>
+                <div className="flex items-center">{t('common.username')} <SortIcon columnKey="username" sortKey={sortConfig.key} sortDirection={sortConfig.direction} /></div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t('admin.phone')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t('admin.location')} / {t('admin.school')}
-              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">手机号</th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('projectCount')}
               >
-                <div className="flex items-center">{t('common.projects')} <SortIcon columnKey="projectCount" sortKey={sortConfig.key} sortDirection={sortConfig.direction} /></div>
+                <div className="flex items-center">项目数量 <SortIcon columnKey="projectCount" sortKey={sortConfig.key} sortDirection={sortConfig.direction} /></div>
               </th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('totalSize')}
               >
                 <div className="flex items-center">{t('admin.usage')} <SortIcon columnKey="totalSize" sortKey={sortConfig.key} sortDirection={sortConfig.direction} /></div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('createdAt')}
+              >
+                <div className="flex items-center">注册时间 <SortIcon columnKey="createdAt" sortKey={sortConfig.key} sortDirection={sortConfig.direction} /></div>
               </th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -245,14 +429,13 @@ export default function AdminUsers() {
                   <div className="text-xs text-gray-500">{user.role}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.phone ? user.phone : <span className="text-gray-300">-</span>}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div className="flex flex-col">
-                    {(user.province || user.city) ? (
-                        <span>{user.province || ''} {user.city || ''}</span>
-                    ) : <span className="text-gray-300">-</span>}
-                    {user.school && <span className="text-xs text-gray-400">{user.school}</span>}
+                     <span>{user.phone || <span className="text-gray-300">-</span>}</span>
+                     <div className="text-xs text-gray-400 mt-1">
+                        {(user.province || user.city) ? `${user.province || ''} ${user.city || ''}` : ''}
+                        {user.school && (user.province || user.city ? ' · ' : '') + user.school}
+                        {!user.province && !user.city && !user.school && <span className="text-gray-300">-</span>}
+                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -271,6 +454,9 @@ export default function AdminUsers() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {formatBytes(user.totalSize)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {new Date(user.createdAt).toLocaleString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : t('common.no')}</div>
@@ -295,15 +481,15 @@ export default function AdminUsers() {
                       </button>
                       <button 
                         onClick={() => resetPassword(user.id)}
-                        className="text-yellow-600 hover:text-yellow-800"
-                        title="重置密码"
+                        className="text-yellow-600 hover:text-yellow-900"
+                        title={t('admin.reset_password')}
                       >
                         <KeyRound size={18} />
                       </button>
                       <button 
                         onClick={() => openDeleteModal(user.id)}
-                        className="text-red-600 hover:text-red-800"
-                        title="删除用户"
+                        className="text-gray-400 hover:text-red-600"
+                        title={t('admin.delete_user')}
                       >
                         <Trash2 size={18} />
                       </button>
@@ -314,13 +500,38 @@ export default function AdminUsers() {
             ))}
             {users.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                  {t('admin.no_users_found')}
+                <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                  {t('common.no_data')}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        {/* Pagination Controls */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+                显示 {((page - 1) * pageSize) + 1} 到 {Math.min(page * pageSize, total)} 条，共 {total} 条
+            </div>
+            <div className="flex gap-2">
+                <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                    上一页
+                </button>
+                <span className="px-3 py-1 border rounded bg-white">
+                    {page} / {Math.max(1, Math.ceil(total / pageSize))}
+                </span>
+                <button
+                    onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
+                    disabled={page >= Math.ceil(total / pageSize)}
+                    className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                    下一页
+                </button>
+            </div>
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}

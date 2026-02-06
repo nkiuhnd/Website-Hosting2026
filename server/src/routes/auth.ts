@@ -70,8 +70,8 @@ router.post('/verify-code', async (req, res) => {
         return res.status(400).json({ message: '请填写所有必填项' });
     }
 
-    if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(username)) {
-        return res.status(400).json({ message: '用户名只能包含字母、数字和连字符(-)，且不能以连字符开头或结尾' });
+    if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(username)) {
+        return res.status(400).json({ message: '用户名只能包含小写字母、数字和连字符(-)，且不能以连字符开头或结尾' });
     }
 
     const valid = await verifySmsCode(phone, code);
@@ -105,8 +105,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: '请填写用户名、密码和手机号' });
     }
 
-    if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(username)) {
-        return res.status(400).json({ message: '用户名只能包含字母、数字和连字符(-)，且不能以连字符开头或结尾' });
+    if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(username)) {
+        return res.status(400).json({ message: '用户名只能包含小写字母、数字和连字符(-)，且不能以连字符开头或结尾' });
     }
 
     const existingByUsername = await prisma.user.findUnique({ where: { username } });

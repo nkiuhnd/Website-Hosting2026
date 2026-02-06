@@ -83,8 +83,8 @@ const Register = () => {
       return;
     }
     // Validate username format (subdomain compatible)
-    if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(username)) {
-      setErrorMsg('用户名只能包含字母、数字和连字符(-)，且不能以连字符开头或结尾');
+    if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(username)) {
+      setErrorMsg('用户名只能包含小写字母、数字和连字符(-)，且不能以连字符开头或结尾');
       return;
     }
     if (code.length !== 6) {
@@ -147,7 +147,7 @@ const Register = () => {
               value={formData.username}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="请设置用户名（仅限字母、数字、-）"
+              placeholder="请设置用户名（仅限小写字母、数字、-）"
             />
           </div>
 

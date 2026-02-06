@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../api';
-import { Eye, EyeOff, ExternalLink, Search, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { Eye, EyeOff, ExternalLink, Search, ArrowUpDown, ArrowUp, ArrowDown, X, Filter, Calendar, FolderOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type SortDirection = 'asc' | 'desc';
@@ -30,8 +30,13 @@ function SortIcon(props: { columnKey: string; sortKey: string; sortDirection: So
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState<AdminProject[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [minVisits, setMinVisits] = useState('');
+  const [createdAfter, setCreatedAfter] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: SortDirection }>({ key: 'createdAt', direction: 'desc' });
   const userIdFilter = searchParams.get('userId');
   const { t } = useTranslation();
@@ -41,11 +46,23 @@ export default function AdminProjects() {
       params: {
         search,
         userId: userIdFilter,
+        page,
+        limit: pageSize,
         sortBy: sortConfig.key,
-        order: sortConfig.direction
+        order: sortConfig.direction,
+        minVisits,
+        createdAfter
       }
-    }).then(res => setProjects(res.data)).catch(console.error);
-  }, [search, userIdFilter, sortConfig]);
+    }).then(res => {
+        if (res.data.data) {
+            setProjects(res.data.data);
+            setTotal(res.data.total);
+        } else if (Array.isArray(res.data)) {
+            setProjects(res.data);
+            setTotal(res.data.length);
+        }
+    }).catch(console.error);
+  }, [search, userIdFilter, sortConfig, page, pageSize, minVisits, createdAfter]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -53,6 +70,51 @@ export default function AdminProjects() {
     }, 300);
     return () => clearTimeout(delayDebounceFn);
   }, [fetchProjects]);
+
+  const exportData = async () => {
+    try {
+      const res = await api.get('/admin/projects', {
+        params: {
+          search,
+          userId: userIdFilter,
+          limit: 'all',
+          sortBy: sortConfig.key,
+          order: sortConfig.direction,
+          minVisits,
+          createdAfter
+        }
+      });
+      
+      const dataToExport = res.data.data || res.data;
+      if (!Array.isArray(dataToExport)) return;
+
+      const csvContent = [
+        ['ID', '项目名称', '所有者', '大小(B)', '访问量', '创建时间', '状态', 'URL'],
+        ...dataToExport.map((p: AdminProject) => [
+          p.id,
+          p.name,
+          p.user.username,
+          p.size,
+          p.visitCount,
+          new Date(p.createdAt).toLocaleString(),
+          p.status,
+          p.siteUrl || ''
+        ])
+      ].map(e => e.join(',')).join('\n');
+
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `projects_export_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('Export failed', e);
+      alert(t('common.action_failed'));
+    }
+  };
 
   const toggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
@@ -96,25 +158,78 @@ export default function AdminProjects() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">
-          {t('admin.project_management')}
-          {userIdFilter && (
-             <span className="ml-4 text-sm font-normal bg-blue-100 text-blue-800 px-3 py-1 rounded-full inline-flex items-center gap-2">
-               {t('admin.filtered_by_user')}: {userIdFilter.substring(0, 8)}...
-               <button onClick={clearUserFilter} className="hover:text-blue-900"><X size={14} /></button>
-             </span>
-          )}
-        </h2>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder={t('admin.search_projects')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-800">
+            {t('admin.project_management')}
+            {userIdFilter && (
+               <span className="ml-4 text-sm font-normal bg-blue-100 text-blue-800 px-3 py-1 rounded-full inline-flex items-center gap-2">
+                 {t('admin.filtered_by_user')}: {userIdFilter.substring(0, 8)}...
+                 <button onClick={clearUserFilter} className="hover:text-blue-900"><X size={14} /></button>
+               </span>
+            )}
+          </h2>
+          <div className="flex gap-2">
+            <button
+                onClick={exportData}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+            >
+                <FolderOpen size={18} />
+                导出数据
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={t('admin.search_projects')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-64"
+              />
+              <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+            </div>
+
+            <div className="flex items-center gap-2 border-l pl-4 border-gray-300">
+               <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="最小访问量"
+                    value={minVisits}
+                    onChange={(e) => setMinVisits(e.target.value)}
+                    className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-36"
+                  />
+                  <Filter className="absolute left-3 top-2.5 text-gray-400" size={18} />
+               </div>
+               <div className="relative">
+                  <input
+                    type="date"
+                    value={createdAfter}
+                    onChange={(e) => setCreatedAfter(e.target.value)}
+                    className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-40"
+                    title="创建时间之后"
+                  />
+                  <Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} />
+               </div>
+            </div>
+
+             <div className="flex items-center gap-2 ml-auto">
+                <span className="text-gray-600 text-sm">每页:</span>
+                <select
+                    className="px-2 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={pageSize}
+                    onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setPage(1);
+                    }}
+                >
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
         </div>
       </div>
 
@@ -204,6 +319,31 @@ export default function AdminProjects() {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="px-6 py-4 bg-gray-50 border border-gray-200 rounded-lg mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            显示 {((page - 1) * pageSize) + 1} 到 {Math.min(page * pageSize, total)} 条，共 {total} 条
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              上一页
+            </button>
+            <span className="px-3 py-1 border rounded bg-white">
+              {page} / {Math.max(1, Math.ceil(total / pageSize))}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
+              disabled={page >= Math.ceil(total / pageSize)}
+              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              下一页
+            </button>
+          </div>
       </div>
     </div>
   );

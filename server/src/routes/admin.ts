@@ -3,7 +3,7 @@ import prisma from '../prisma';
 import { authenticateToken, AuthRequest } from '../middlewares/auth';
 import fs from 'fs-extra';
 import bcrypt from 'bcryptjs';
-import { resolveProjectFromUrl } from '../utils/projectResolver';
+import { resolveProjectFromUrl, resolveInfoFromUrl } from '../utils/projectResolver';
 
 const router = Router();
 
@@ -90,6 +90,30 @@ router.get('/stats', async (req: Request, res: Response) => {
             where: { createdAt: { gte: startOfDay } }
         });
 
+        // Chart Data (Last 7 days)
+        const chartData = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            date.setHours(0, 0, 0, 0);
+            
+            const nextDate = new Date(date);
+            nextDate.setDate(date.getDate() + 1);
+
+            const [visits, users, projects] = await Promise.all([
+                prisma.visitLog.count({ where: { createdAt: { gte: date, lt: nextDate } } }),
+                prisma.user.count({ where: { createdAt: { gte: date, lt: nextDate } } }),
+                prisma.project.count({ where: { createdAt: { gte: date, lt: nextDate } } })
+            ]);
+
+            chartData.push({
+                date: `${date.getMonth() + 1}/${date.getDate()}`,
+                visits,
+                users,
+                projects
+            });
+        }
+
         res.json({
             totalUsers,
             totalProjects,
@@ -97,7 +121,8 @@ router.get('/stats', async (req: Request, res: Response) => {
             visitsToday,
             totalStorage: totalStorage._sum.size || 0,
             activeUsersToday,
-            currentActiveUsers
+            currentActiveUsers,
+            chartData
         });
     } catch (error) {
         console.error('Delete user error:', error);
@@ -172,25 +197,46 @@ router.get('/visit-logs', async (req: Request, res: Response) => {
 // Get Users with stats
 router.get('/users', async (req: Request, res: Response) => {
     try {
-        const { sortBy, order, search } = req.query;
+        const { sortBy, order, search, page, limit, lastActiveAfter, minStorage, maxStorage, minProjectCount, maxProjectCount } = req.query;
+
+        const pageNum = Number(page) || 1;
+        const limitNum = Number(limit) || 50;
+        const skip = (pageNum - 1) * limitNum;
+        const fetchAll = limit === 'all';
+        const needsInMemoryFilter = minStorage || maxStorage || minProjectCount || maxProjectCount;
 
         const whereClause: any = {};
         if (search) {
-            whereClause.username = { contains: String(search) };
+            whereClause.OR = [
+                { username: { contains: String(search) } },
+                { phone: { contains: String(search) } },
+                { email: { contains: String(search) } },
+                { school: { contains: String(search) } }
+            ];
         }
+
+        if (lastActiveAfter) {
+             const date = new Date(String(lastActiveAfter));
+             if (!isNaN(date.getTime())) {
+                 whereClause.lastActiveAt = { gte: date };
+             }
+        }
+        
+        // Note: Storage and Project Count filtering is done in memory to keep Prisma usage simple
+        // especially since totalSize is an aggregation result.
 
         const orderByClause: any = {};
         if (sortBy) {
              // Handling simple fields sorting
-             if (['createdAt', 'lastLoginAt', 'username'].includes(String(sortBy))) {
+             if (['createdAt', 'lastLoginAt', 'username', 'lastActiveAt'].includes(String(sortBy))) {
                 orderByClause[String(sortBy)] = order === 'asc' ? 'asc' : 'desc';
              }
-             // Note: Sorting by calculated fields (projectCount, totalSize) is complex in Prisma directly
-             // We will sort in memory for these specific fields if requested
         } else {
             orderByClause.createdAt = 'desc';
         }
 
+        // If filtering by storage or project count, we fetch all matching users first
+        
         const users = await prisma.user.findMany({
             where: whereClause,
             include: {
@@ -201,7 +247,9 @@ router.get('/users', async (req: Request, res: Response) => {
                     select: { size: true }
                 }
             },
-            orderBy: Object.keys(orderByClause).length > 0 ? orderByClause : undefined
+            orderBy: Object.keys(orderByClause).length > 0 ? orderByClause : undefined,
+            skip: (fetchAll || needsInMemoryFilter) ? undefined : skip,
+            take: (fetchAll || needsInMemoryFilter) ? undefined : limitNum,
         });
 
         let usersWithStats = users.map((user: any) => ({
@@ -221,6 +269,26 @@ router.get('/users', async (req: Request, res: Response) => {
             totalSize: user.projects.reduce((acc: number, p: any) => acc + p.size, 0)
         }));
 
+        // Filter by Storage
+        if (minStorage) {
+            const minBytes = Number(minStorage) * 1024 * 1024; // MB to Bytes
+            usersWithStats = usersWithStats.filter((u: any) => u.totalSize >= minBytes);
+        }
+        if (maxStorage) {
+            const maxBytes = Number(maxStorage) * 1024 * 1024; // MB to Bytes
+            usersWithStats = usersWithStats.filter((u: any) => u.totalSize <= maxBytes);
+        }
+
+        // Filter by Project Count
+        if (minProjectCount) {
+            const min = Number(minProjectCount);
+            usersWithStats = usersWithStats.filter((u: any) => u.projectCount >= min);
+        }
+        if (maxProjectCount) {
+            const max = Number(maxProjectCount);
+            usersWithStats = usersWithStats.filter((u: any) => u.projectCount <= max);
+        }
+
         // In-memory sort for calculated fields
         if (sortBy === 'projectCount' || sortBy === 'totalSize') {
             usersWithStats.sort((a: any, b: any) => {
@@ -230,9 +298,21 @@ router.get('/users', async (req: Request, res: Response) => {
             });
         }
 
-        res.json(usersWithStats);
+        // If we fetched all (due to storage/project filter or export), we need to paginate manually now
+        const total = needsInMemoryFilter ? usersWithStats.length : await prisma.user.count({ where: whereClause });
+        
+        if (needsInMemoryFilter && !fetchAll) {
+            usersWithStats = usersWithStats.slice(skip, skip + limitNum);
+        }
+
+        res.json({
+            data: usersWithStats,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum)
+        });
     } catch (error) {
-        console.error('Delete user error:', error);
+        console.error('Get users error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -259,7 +339,12 @@ router.patch('/users/:id/status', async (req: Request, res: Response) => {
 // Get Projects with details
 router.get('/projects', async (req: Request, res: Response) => {
     try {
-        const { sortBy, order, search, userId } = req.query;
+        const { sortBy, order, search, userId, page, limit, minVisits, createdAfter } = req.query;
+
+        const pageNum = Number(page) || 1;
+        const limitNum = Number(limit) || 50;
+        const skip = (pageNum - 1) * limitNum;
+        const fetchAll = limit === 'all';
 
         const whereClause: any = {};
         if (search) {
@@ -272,6 +357,15 @@ router.get('/projects', async (req: Request, res: Response) => {
         if (userId) {
             whereClause.userId = String(userId);
         }
+        if (minVisits) {
+            whereClause.visitCount = { gte: Number(minVisits) };
+        }
+        if (createdAfter) {
+            const date = new Date(String(createdAfter));
+            if (!isNaN(date.getTime())) {
+                whereClause.createdAt = { gte: date };
+            }
+        }
 
         const orderByClause: any = {};
         if (sortBy) {
@@ -280,15 +374,21 @@ router.get('/projects', async (req: Request, res: Response) => {
             orderByClause.createdAt = 'desc';
         }
 
-        const projects = await prisma.project.findMany({
-            where: whereClause,
-            include: {
-                user: {
-                    select: { username: true }
-                }
-            },
-            orderBy: orderByClause
-        });
+        const [projects, total] = await prisma.$transaction([
+            prisma.project.findMany({
+                where: whereClause,
+                include: {
+                    user: {
+                        select: { username: true }
+                    }
+                },
+                orderBy: orderByClause,
+                skip: fetchAll ? undefined : skip,
+                take: fetchAll ? undefined : limitNum
+            }),
+            prisma.project.count({ where: whereClause })
+        ]);
+
         const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host') || 'localhost'}`).replace(/\/$/, '');
         const projectsWithUrl = projects.map((p: any) => {
             const siteUrl = buildSiteUrl(
@@ -299,8 +399,15 @@ router.get('/projects', async (req: Request, res: Response) => {
             );
             return { ...p, siteUrl };
         });
-        res.json(projectsWithUrl);
+
+        res.json({
+            data: projectsWithUrl,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum)
+        });
     } catch (error) {
+        console.error('Get projects error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -426,8 +533,13 @@ router.get('/reports', async (req: Request, res: Response) => {
         // Enhance reports with project and user violation stats
         const enhancedReports = await Promise.all(reports.map(async (report) => {
             let projectId = report.projectId;
+            let resolvedUser = null;
+
             if (!projectId && report.targetUrl) {
-                projectId = await resolveProjectFromUrl(report.targetUrl);
+                const info = await resolveInfoFromUrl(report.targetUrl);
+                projectId = info.projectId;
+                resolvedUser = info.user;
+
                 if (projectId) {
                     await prisma.report.update({
                         where: { id: report.id },
@@ -472,6 +584,19 @@ router.get('/reports', async (req: Request, res: Response) => {
                         }
                     });
                 }
+            } else if (resolvedUser) {
+                 // Fallback: User identified from URL but project not found
+                 projectOwner = {
+                     id: resolvedUser.id,
+                     username: resolvedUser.username,
+                     status: resolvedUser.status
+                 };
+                 userViolationCount = await prisma.project.count({
+                     where: {
+                         userId: resolvedUser.id,
+                         status: 'DISABLED'
+                     }
+                 });
             }
             
             return {
