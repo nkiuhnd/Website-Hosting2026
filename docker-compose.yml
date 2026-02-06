@@ -4,6 +4,7 @@ services:
     image: hanshuai23/web-hosting-platform:latest
     volumes:
       - ./server/prisma/production.db:/app/server/prisma/dev_v2.db
+      - ./server/prisma/migrations:/app/server/prisma/migrations
       - ./server/uploads:/app/server/uploads
       - ./server/.env:/app/server/.env
     environment:
