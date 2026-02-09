@@ -709,6 +709,17 @@ export default function Dashboard() {
                       <Globe size={12} />
                       {project.isPublic ? '公开' : '私有'}
                     </button>
+                    {project.isPublic && (
+                      <a
+                        href={`/square/${project.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                        title="在广场中查看"
+                      >
+                        广场视角 <ExternalLink size={10} />
+                      </a>
+                    )}
                   </div>
                   <a
                     href={project.siteUrl || `http://localhost:4000/sites/${username}/${project.name}${project.entryFile && project.entryFile !== 'index.html' ? '/' + project.entryFile : ''}`}
@@ -769,6 +780,17 @@ export default function Dashboard() {
                             <Globe size={12} />
                             {project.isPublic ? '公开' : '私有'}
                           </button>
+                          {project.isPublic && (
+                            <a
+                              href={`/square/${project.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                              title="在广场中查看"
+                            >
+                              广场视角 <ExternalLink size={10} />
+                            </a>
+                          )}
                           <a
                             href={project.siteUrl || `http://localhost:4000/sites/${username}/${project.name}${project.entryFile && project.entryFile !== 'index.html' ? '/' + project.entryFile : ''}`}
                             target="_blank"

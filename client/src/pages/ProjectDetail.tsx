@@ -21,6 +21,7 @@ interface ProjectDetail {
   visitCount: number;
   isPublic: boolean;
   isLiked: boolean;
+  siteUrl?: string;
   user: {
     id: string;
     username: string;
@@ -43,6 +44,9 @@ export default function ProjectDetail() {
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [messageContent, setMessageContent] = useState('');
   const [messageSending, setMessageSending] = useState(false);
+
+  // Use siteUrl from API if available, otherwise construct it (fallback)
+  const siteUrl = project?.siteUrl || '';
 
   useEffect(() => {
     fetchProject();
@@ -128,13 +132,21 @@ export default function ProjectDetail() {
     }
   };
 
-  if (loading) return <div className="text-center py-20">加载中...</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   if (!project) return null;
 
-  const siteUrl = `http://localhost:4000/sites/${project.user.username}/${project.name}/`;
+  // 如果后端没有返回siteUrl（不太可能），可以在前端兜底，但现在后端已经修复了
+  // const siteUrl = ...
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">

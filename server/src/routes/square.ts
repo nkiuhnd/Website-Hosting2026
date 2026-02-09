@@ -2,6 +2,8 @@ import { Router } from 'express';
 import prisma from '../prisma';
 import { authenticateToken, optionalAuthenticateToken, AuthRequest } from '../middlewares/auth';
 
+import { buildSiteUrl } from '../utils/url';
+
 const router = Router();
 
 // Get Public Projects List
@@ -86,8 +88,10 @@ router.get('/:id', optionalAuthenticateToken, async (req: AuthRequest, res) => {
 
         // Construct siteUrl manually if needed, or frontend can handle it
         // The frontend logic usually constructs it from username/name
-        
-        res.json({ ...project, isLiked });
+        const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host') || 'localhost'}`).replace(/\/$/, '');
+        const siteUrl = project.user ? buildSiteUrl(baseUrl, project.user.username, project.name, project.entryFile) : '';
+
+        res.json({ ...project, isLiked, siteUrl });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching project details' });

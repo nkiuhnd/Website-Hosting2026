@@ -36,32 +36,7 @@ const BLACKLISTED_EXTENSIONS = [
     '.htaccess', '.env', '.git', '.DS_Store', '.sql', '.db'
 ];
 
-const buildSiteUrl = (baseUrl: string, username: string, projectName: string, entryFile?: string | null) => {
-  const trimmedBase = baseUrl.replace(/\/$/, '');
-  const entrySuffix = entryFile && entryFile !== 'index.html'
-    ? '/' + String(entryFile).split('/').map(encodeURIComponent).join('/')
-    : '';
-  let urlObj: URL;
-  try {
-    urlObj = new URL(trimmedBase);
-  } catch {
-    return `${trimmedBase}/sites/${encodeURIComponent(username)}/${encodeURIComponent(projectName)}${entrySuffix}`;
-  }
-  const hostname = urlObj.hostname;
-  const protocol = urlObj.protocol;
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-  const isIp = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname);
-  if (isLocalhost || isIp) {
-    return `${trimmedBase}/sites/${encodeURIComponent(username)}/${encodeURIComponent(projectName)}${entrySuffix}`;
-  }
-  const parts = hostname.split('.');
-  if (parts.length < 2) {
-    return `${trimmedBase}/sites/${encodeURIComponent(username)}/${encodeURIComponent(projectName)}${entrySuffix}`;
-  }
-  const rootDomain = parts.slice(-2).join('.');
-  const siteBase = `${protocol}//${encodeURIComponent(username)}.${rootDomain}`;
-  return `${siteBase}/${encodeURIComponent(projectName)}${entrySuffix}`;
-};
+import { buildSiteUrl } from '../utils/url';
 
 // Inject Footer (Watermark)
 async function injectFooter(filePath: string) {
