@@ -46,6 +46,34 @@ export default function Profile() {
   // Modal state
   const [selectedProject, setSelectedProject] = useState<{id: string, name: string} | null>(null);
 
+  // Sorting state
+  const [sortField, setSortField] = useState<keyof Project>('updatedAt');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: keyof Project) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const sortedProjects = [...projects].sort((a, b) => {
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+    
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+       return sortDirection === 'asc' 
+         ? aValue.localeCompare(bValue) 
+         : bValue.localeCompare(aValue);
+    }
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+       return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+    return 0;
+  });
+
   // Password change state
   const [passForm, setPassForm] = useState({
     oldPassword: '',
@@ -262,22 +290,69 @@ export default function Profile() {
                 <table className="min-w-full divide-y divide-gray-100">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目名称</th>
+                            <th 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                                onClick={() => handleSort('name')}
+                            >
+                                <div className="flex items-center gap-1">
+                                    项目名称
+                                    {sortField === 'name' && (
+                                        sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                                    )}
+                                </div>
+                            </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">占用空间</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">总访问量</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">更新时间</th>
+                            <th 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                                onClick={() => handleSort('size')}
+                            >
+                                <div className="flex items-center gap-1">
+                                    占用空间
+                                    {sortField === 'size' && (
+                                        sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                                    )}
+                                </div>
+                            </th>
+                            <th 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                                onClick={() => handleSort('visitCount')}
+                            >
+                                <div className="flex items-center gap-1">
+                                    总访问量
+                                    {sortField === 'visitCount' && (
+                                        sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                                    )}
+                                </div>
+                            </th>
+                            <th 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                                onClick={() => handleSort('updatedAt')}
+                            >
+                                <div className="flex items-center gap-1">
+                                    更新时间
+                                    {sortField === 'updatedAt' && (
+                                        sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                                    )}
+                                </div>
+                            </th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                        {projects.map((project) => (
+                        {sortedProjects.map((project) => (
                             <tr key={project.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex flex-col">
-                                        <span className="font-medium text-gray-900">{project.name}</span>
-                                        <a href={project.siteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-0.5">
-                                            {project.siteUrl} <ExternalLink size={10} />
+                                <td className="px-6 py-4">
+                                    <div className="flex flex-col max-w-[200px] md:max-w-[300px]">
+                                        <span className="font-medium text-gray-900 truncate" title={project.name}>{project.name}</span>
+                                        <a 
+                                            href={project.siteUrl} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-0.5 w-full"
+                                            title={project.siteUrl}
+                                        >
+                                            <span className="truncate flex-1 min-w-0">{project.siteUrl}</span>
+                                            <ExternalLink size={10} className="flex-shrink-0" />
                                         </a>
                                     </div>
                                 </td>
@@ -311,7 +386,7 @@ export default function Profile() {
                                 </td>
                             </tr>
                         ))}
-                        {projects.length === 0 && (
+                        {sortedProjects.length === 0 && (
                             <tr>
                                 <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                                     暂无项目
