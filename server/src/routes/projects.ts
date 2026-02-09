@@ -464,6 +464,46 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
     }
 });
 
+// Get Project Visit Logs
+router.get('/:id/visits', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const projectId = String(req.params.id);
+        const userId = req.user!.id;
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        // Verify project ownership
+        const project = await prisma.project.findFirst({
+            where: { id: projectId, userId }
+        });
+
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        const [logs, total] = await prisma.$transaction([
+            prisma.visitLog.findMany({
+                where: { projectId },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit
+            }),
+            prisma.visitLog.count({ where: { projectId } })
+        ]);
+
+        res.json({
+            logs,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        });
+    } catch (error) {
+        console.error('Get project visit logs error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // --- Messages ---
 
 router.post('/messages/send', authenticateToken, async (req: AuthRequest, res) => {

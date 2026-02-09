@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useTranslation } from 'react-i18next';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Legend } from 'recharts';
@@ -43,6 +44,7 @@ export default function AdminDashboard() {
   const [announcementSending, setAnnouncementSending] = useState(false);
   const [announcementFeedback, setAnnouncementFeedback] = useState<string | null>(null);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get('/admin/stats').then(res => setStats(res.data)).catch(console.error);
@@ -154,8 +156,8 @@ export default function AdminDashboard() {
               近7天访问趋势
             </h3>
           </div>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-80 w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={stats.chartData || []}>
                 <defs>
                   <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
@@ -184,8 +186,8 @@ export default function AdminDashboard() {
               新增趋势
             </h3>
           </div>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-80 w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={stats.chartData || []}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
@@ -259,7 +261,12 @@ export default function AdminDashboard() {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-800">最近访问记录</h3>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">查看全部</button>
+                <button 
+                  onClick={() => navigate('/admin/visit-logs')}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  查看全部
+                </button>
             </div>
             <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">

@@ -162,9 +162,61 @@ router.get('/visit-logs', async (req: Request, res: Response) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 50;
         const skip = (page - 1) * limit;
+        const { search, projectId, startDate, endDate, ip, projectName, username } = req.query;
+
+        const whereClause: any = {};
+        
+        // Legacy search (fuzzy) - kept for backward compatibility if needed, 
+        // but if specific fields are provided, they take precedence or combine.
+        if (search) {
+            whereClause.OR = [
+                { ip: { contains: String(search) } },
+                { project: { name: { contains: String(search) } } }
+            ];
+        }
+
+        // Granular filters
+        if (ip) {
+            whereClause.ip = { contains: String(ip) };
+        }
+
+        if (projectId) {
+            whereClause.projectId = String(projectId);
+        }
+
+        if (projectName || username) {
+             whereClause.project = whereClause.project || {};
+             
+             if (projectName) {
+                 whereClause.project.name = String(projectName);
+             }
+             if (username) {
+                 whereClause.project.user = { username: String(username) };
+             }
+        }
+
+        if (startDate || endDate) {
+            whereClause.createdAt = {};
+            if (startDate) {
+                const start = new Date(String(startDate));
+                if (!isNaN(start.getTime())) {
+                    whereClause.createdAt.gte = start;
+                }
+            }
+            if (endDate) {
+                const end = new Date(String(endDate));
+                if (!isNaN(end.getTime())) {
+                    // Set end date to end of day if it's just a date string, or use as is
+                    // Assuming ISO string or date string. If just date, we want end of that day.
+                    // But usually clients send exact ISO strings. Let's just use it directly.
+                    whereClause.createdAt.lte = end;
+                }
+            }
+        }
 
         const [logs, total] = await prisma.$transaction([
             prisma.visitLog.findMany({
+                where: whereClause,
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' },
@@ -179,7 +231,7 @@ router.get('/visit-logs', async (req: Request, res: Response) => {
                     }
                 }
             }),
-            prisma.visitLog.count()
+            prisma.visitLog.count({ where: whereClause })
         ]);
 
         res.json({

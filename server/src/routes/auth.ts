@@ -260,31 +260,7 @@ router.post('/forgot', async (req, res) => {
   }
 });
 
-router.post('/change-password', async (req, res) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ message: 'Access denied. No token provided.' });
-    let userPayload: any;
-    try {
-      userPayload = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey');
-    } catch {
-      return res.status(403).json({ message: 'Invalid token' });
-    }
-    const { oldPassword, newPassword } = req.body;
-    if (!oldPassword || !newPassword) return res.status(400).json({ message: 'oldPassword and newPassword are required' });
-    const user = await prisma.user.findUnique({ where: { id: userPayload.id } });
-    if (!user) return res.status(400).json({ message: 'User not found' });
-    const ok = await bcrypt.compare(String(oldPassword), user.password);
-    if (!ok) return res.status(400).json({ message: 'Invalid old password' });
-    const hashedPassword = await bcrypt.hash(String(newPassword), 10);
-    await prisma.user.update({ where: { id: user.id }, data: { password: hashedPassword } });
-    res.json({ message: 'Password changed' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
+
 
 router.post('/set-recovery-code', async (req, res) => {
   try {
@@ -323,8 +299,6 @@ router.get('/lookup-username', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
-export default router;
 
 // Get Current User Profile & Stats
 router.get('/me', authenticateToken, async (req: AuthRequest, res) => {
@@ -402,3 +376,5 @@ router.post('/change-password', authenticateToken, async (req: AuthRequest, res)
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+export default router;
