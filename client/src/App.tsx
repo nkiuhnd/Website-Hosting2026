@@ -13,6 +13,8 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminMessages from './pages/admin/AdminMessages';
 import AdminVisitLogs from './pages/admin/AdminVisitLogs';
 import ForgotPassword from './pages/ForgotPassword.tsx';
+import Square from './pages/Square';
+import ProjectDetail from './pages/ProjectDetail';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/useAuth';
 
@@ -35,6 +37,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot" element={<ForgotPassword />} />
+          <Route path="/square" element={<Square />} />
+          <Route path="/square/:id" element={<ProjectDetail />} />
           <Route
             path="/dashboard"
             element={

@@ -9,6 +9,7 @@ import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import adminRoutes from './routes/admin';
 import reportRoutes from './routes/reports';
+import squareRoutes from './routes/square';
 import prisma from './prisma';
 import { createDefaultAdmin, setupTestUsers } from './utils/initAdmin';
 
@@ -30,8 +31,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
     // 禁止 MIME 类型嗅探
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    // 防止点击劫持
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    // 允许被 iframe 嵌入 (为了支持广场页预览和外部调用)
+    // res.setHeader('X-Frame-Options', 'SAMEORIGIN'); 
+    res.setHeader('Content-Security-Policy', "frame-ancestors *");
     // 保护 Referrer 隐私
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     next();
@@ -71,6 +73,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/square', squareRoutes);
 
 const serveProjectFile = async (req: Request, username: string, projectName: string, filePath: string, res: Response) => {
   try {

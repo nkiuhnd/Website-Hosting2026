@@ -90,10 +90,10 @@ const Home = () => {
                 </svg>
               </button>
               <button 
-                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-8 py-4 bg-white text-gray-700 border border-gray-200 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all hover:border-gray-300 w-full sm:w-auto cursor-pointer"
+                onClick={() => navigate('/square')}
+                className="px-8 py-4 bg-white text-gray-700 border border-gray-200 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all hover:border-gray-300 w-full sm:w-auto cursor-pointer flex items-center justify-center gap-2"
               >
-                了解更多
+                进入社区广场
               </button>
             </div>
           </div>

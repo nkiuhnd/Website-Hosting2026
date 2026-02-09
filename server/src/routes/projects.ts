@@ -464,6 +464,31 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
     }
 });
 
+// Toggle Public Status
+router.patch('/:id/toggle-public', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+        const id = String(req.params.id);
+        const userId = req.user!.id;
+        const { isPublic } = req.body;
+
+        const project = await prisma.project.findFirst({
+            where: { id, userId }
+        });
+
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        const updatedProject = await prisma.project.update({
+            where: { id },
+            data: { isPublic: Boolean(isPublic) }
+        });
+
+        res.json(updatedProject);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Get Project Visit Logs
 router.get('/:id/visits', authenticateToken, async (req: AuthRequest, res) => {
     try {

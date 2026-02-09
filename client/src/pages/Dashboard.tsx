@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import api from '../api';
 import { useAuth } from '../context/useAuth';
-import { Trash2, ExternalLink, LogOut, LayoutGrid, List, Search, User, Download, QrCode, Bell } from 'lucide-react';
+import { Trash2, ExternalLink, LogOut, LayoutGrid, List, Search, User, Download, QrCode, Bell, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ProjectIcon from '../components/ProjectIcon';
@@ -20,6 +20,7 @@ interface Project {
   size: number;
   visitCount: number;
   status: string;
+  isPublic: boolean;
 }
 
 interface Message {
@@ -192,6 +193,16 @@ export default function Dashboard() {
   const toggleViewMode = (mode: 'grid' | 'list') => {
     setViewMode(mode);
     localStorage.setItem('dashboardViewMode', mode);
+  };
+
+  const togglePublic = async (id: string, currentStatus: boolean) => {
+    try {
+      await api.patch(`/projects/${id}/toggle-public`, { isPublic: !currentStatus });
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, isPublic: !currentStatus } : p));
+    } catch (err) {
+      console.error('Failed to toggle public status', err);
+      alert('操作失败');
+    }
   };
 
   const onUpload = async (data: UploadProjectForm) => {
@@ -686,9 +697,19 @@ export default function Dashboard() {
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2 h-10">{project.description || t('dashboard.no_description')}</p>
                 
                 <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                  <span className="text-gray-400 text-xs">
-                    {new Date(project.createdAt).toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400 text-xs">
+                      {new Date(project.createdAt).toLocaleDateString()}
+                    </span>
+                    <button
+                      onClick={() => togglePublic(project.id, project.isPublic)}
+                      className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition ${project.isPublic ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      title={project.isPublic ? '已公开到广场' : '私有项目'}
+                    >
+                      <Globe size={12} />
+                      {project.isPublic ? '公开' : '私有'}
+                    </button>
+                  </div>
                   <a
                     href={project.siteUrl || `http://localhost:4000/sites/${username}/${project.name}${project.entryFile && project.entryFile !== 'index.html' ? '/' + project.entryFile : ''}`}
                     target="_blank"
@@ -740,6 +761,14 @@ export default function Dashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => togglePublic(project.id, project.isPublic)}
+                            className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition ${project.isPublic ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                            title={project.isPublic ? '已公开到广场' : '私有项目'}
+                          >
+                            <Globe size={12} />
+                            {project.isPublic ? '公开' : '私有'}
+                          </button>
                           <a
                             href={project.siteUrl || `http://localhost:4000/sites/${username}/${project.name}${project.entryFile && project.entryFile !== 'index.html' ? '/' + project.entryFile : ''}`}
                             target="_blank"
