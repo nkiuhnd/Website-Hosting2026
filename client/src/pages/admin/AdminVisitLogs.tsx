@@ -184,7 +184,7 @@ export default function AdminVisitLogs() {
           <div className="flex gap-2">
             <button
                 onClick={exportData}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2 cursor-pointer"
             >
                 <FolderOpen size={18} />
                 导出日志
@@ -253,7 +253,7 @@ export default function AdminVisitLogs() {
 
             <button
                 onClick={handleSearch}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer"
             >
                 搜索
             </button>
@@ -309,7 +309,7 @@ export default function AdminVisitLogs() {
                         setAppliedEndDate('');
                         setRefreshTrigger(p => p + 1);
                     }}
-                    className="ml-auto text-blue-600 hover:text-blue-800 hover:underline"
+                    className="ml-auto text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                 >
                     清除筛选
                 </button>
@@ -376,7 +376,7 @@ export default function AdminVisitLogs() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
             >
               上一页
             </button>
@@ -386,7 +386,7 @@ export default function AdminVisitLogs() {
             <button
               onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
               disabled={page >= Math.ceil(total / pageSize)}
-              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
             >
               下一页
             </button>

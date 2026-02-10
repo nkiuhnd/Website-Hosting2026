@@ -2,8 +2,13 @@ import bcrypt from 'bcryptjs';
 import prisma from '../prisma';
 
 export const createDefaultAdmin = async () => {
-  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'hanshuai1987';
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminUsername || !adminPassword) {
+    console.warn('Warning: ADMIN_USERNAME or ADMIN_PASSWORD not found in .env. Skipping admin account creation.');
+    return;
+  }
 
   try {
     const existingAdmin = await prisma.user.findFirst({
@@ -32,14 +37,37 @@ export const createDefaultAdmin = async () => {
         }
       }
     } else {
-      // Optional: Ensure the existing admin has ADMIN role
-      if (existingAdmin.role !== 'ADMIN') {
-        console.log('Updating existing admin user to ADMIN role...');
-        await prisma.user.update({
-          where: { id: existingAdmin.id },
-          data: { role: 'ADMIN' }
-        });
+      // Ensure the existing admin has ADMIN role and sync password from env
+      console.log(`Checking existing admin user ${adminUsername}...`);
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      
+      // We update the password to match .env to ensure the environment variable is the source of truth
+      await prisma.user.update({
+        where: { id: existingAdmin.id },
+        data: { 
+            role: 'ADMIN',
+            password: hashedPassword
+        }
+      });
+      console.log(`Admin user ${adminUsername} updated (role and password synced).`);
+    }
+
+    // Security Cleanup: Delete ANY other admin users that do not match the current ADMIN_USERNAME
+    // This prevents old admin accounts (with potentially weak passwords) from lingering.
+    const otherAdmins = await prisma.user.findMany({
+      where: {
+        role: 'ADMIN',
+        username: { not: adminUsername }
       }
+    });
+
+    if (otherAdmins.length > 0) {
+      console.log(`Found ${otherAdmins.length} redundant admin account(s). Executing security cleanup...`);
+      for (const oldAdmin of otherAdmins) {
+        console.warn(`[Security] Deleting old admin account: ${oldAdmin.username}`);
+        await prisma.user.delete({ where: { id: oldAdmin.id } });
+      }
+      console.log('Security cleanup completed. Only the current env-configured admin remains.');
     }
   } catch (error) {
     console.error('Error creating default admin:', error);

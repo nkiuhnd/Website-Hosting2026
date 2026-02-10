@@ -82,7 +82,7 @@ export default function AdminMessages() {
           </select>
           <button
             onClick={markAllRead}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-blue-600 hover:underline cursor-pointer"
             disabled={unreadCount === 0}
           >
             全部已读
@@ -125,7 +125,7 @@ export default function AdminMessages() {
                   {!msg.read && (
                     <button
                       onClick={() => markMessageRead(msg.id)}
-                      className="text-xs text-blue-600 hover:underline"
+                      className="text-xs text-blue-600 hover:underline cursor-pointer"
                     >
                       标记已读
                     </button>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import { Search, Heart, Eye, Filter, ArrowLeft } from 'lucide-react';
+import { Search, Heart, Eye, Filter, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 
 interface SquareProject {
@@ -73,18 +73,21 @@ export default function Square() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
-              <button onClick={() => navigate('/')} className="text-gray-500 hover:text-gray-900">
+              <button onClick={() => navigate('/')} className="text-gray-500 hover:text-gray-900 cursor-pointer">
                 <ArrowLeft size={20} />
               </button>
               <h1 className="text-xl font-bold text-gray-900">社区广场</h1>
             </div>
             <div className="flex items-center gap-4">
                {token ? (
-                   <button onClick={() => navigate('/dashboard')} className="text-sm font-medium text-blue-600 hover:text-blue-800">
-                       控制台
+                   <button 
+                     onClick={() => navigate('/dashboard')} 
+                     className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition shadow-sm hover:shadow cursor-pointer"
+                   >
+                       控制台 <LayoutDashboard size={14} />
                    </button>
                ) : (
-                   <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                   <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-600 hover:text-gray-900 cursor-pointer">
                        登录
                    </button>
                )}
@@ -112,7 +115,7 @@ export default function Square() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="border border-gray-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="border border-gray-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer"
             >
               <option value="latest">最新发布</option>
               <option value="popular">最多点赞</option>
@@ -180,7 +183,7 @@ export default function Square() {
             <button
               disabled={page === 1}
               onClick={() => setPage(p => p - 1)}
-              className="px-4 py-2 border rounded hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-2 border rounded hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               上一页
             </button>
@@ -190,7 +193,7 @@ export default function Square() {
             <button
               disabled={page === totalPages}
               onClick={() => setPage(p => p + 1)}
-              className="px-4 py-2 border rounded hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-2 border rounded hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               下一页
             </button>

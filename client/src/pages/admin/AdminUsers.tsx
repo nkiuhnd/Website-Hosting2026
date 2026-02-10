@@ -282,7 +282,7 @@ export default function AdminUsers() {
           <div className="flex gap-2">
             <button
                 onClick={exportData}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2 cursor-pointer"
             >
                 <FolderOpen size={18} />
                 导出数据
@@ -444,7 +444,7 @@ export default function AdminUsers() {
                     {user.projectCount > 0 && (
                       <button 
                         onClick={() => navigate(`/admin/projects?userId=${user.id}`)}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-600 hover:text-blue-800 cursor-pointer"
                         title={t('admin.view_projects')}
                       >
                         <FolderOpen size={16} />
@@ -474,21 +474,21 @@ export default function AdminUsers() {
                     <div className="flex items-center gap-3">
                       <button 
                         onClick={() => toggleStatus(user.id, user.status)}
-                        className={`${user.status === 'ACTIVE' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                        className={`${user.status === 'ACTIVE' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} cursor-pointer`}
                         title={user.status === 'ACTIVE' ? t('admin.ban_user') : t('admin.activate_user')}
                       >
                         {user.status === 'ACTIVE' ? <Ban size={18} /> : <CheckCircle size={18} />}
                       </button>
                       <button 
                         onClick={() => resetPassword(user.id)}
-                        className="text-yellow-600 hover:text-yellow-900"
+                        className="text-yellow-600 hover:text-yellow-900 cursor-pointer"
                         title={t('admin.reset_password')}
                       >
                         <KeyRound size={18} />
                       </button>
                       <button 
                         onClick={() => openDeleteModal(user.id)}
-                        className="text-gray-400 hover:text-red-600"
+                        className="text-gray-400 hover:text-red-600 cursor-pointer"
                         title={t('admin.delete_user')}
                       >
                         <Trash2 size={18} />
@@ -516,7 +516,7 @@ export default function AdminUsers() {
                 <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
                 >
                     上一页
                 </button>
@@ -526,7 +526,7 @@ export default function AdminUsers() {
                 <button
                     onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
                     disabled={page >= Math.ceil(total / pageSize)}
-                    className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
                 >
                     下一页
                 </button>
@@ -559,7 +559,7 @@ export default function AdminUsers() {
                     <button
                         onClick={sendVerificationCode}
                         disabled={countdown > 0}
-                        className={`px-3 py-2 rounded-md text-sm font-medium ${
+                        className={`px-3 py-2 rounded-md text-sm font-medium cursor-pointer ${
                             countdown > 0
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
@@ -576,14 +576,14 @@ export default function AdminUsers() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={confirmDeleteUser}
                 disabled={!verifyCode}
-                className={`px-4 py-2 rounded-md transition-colors ${
+                className={`px-4 py-2 rounded-md transition-colors cursor-pointer ${
                     !verifyCode 
                     ? 'bg-red-300 text-white cursor-not-allowed'
                     : 'bg-red-600 text-white hover:bg-red-700'

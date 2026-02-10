@@ -69,10 +69,10 @@ export default function Login() {
           </button>
         </form>
         <p className="mt-4 text-center text-sm">
-          {t('login.no_account')} <Link to="/register" className="text-blue-600 hover:underline">{t('common.register')}</Link>
+          {t('login.no_account')} <Link to="/register" className="text-blue-600 hover:underline cursor-pointer">{t('common.register')}</Link>
         </p>
         <p className="mt-2 text-center text-sm">
-          忘记密码？<Link to="/forgot" className="text-blue-600 hover:underline">通过短信验证码找回</Link>
+          忘记密码？<Link to="/forgot" className="text-blue-600 hover:underline cursor-pointer">通过短信验证码找回</Link>
         </p>
       </div>
     </div>

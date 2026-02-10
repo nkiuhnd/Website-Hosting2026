@@ -30,7 +30,7 @@ const ShareQRCodeModal: React.FC<ShareQRCodeModalProps> = ({ isOpen, onClose, pr
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h3 className="text-lg font-bold text-gray-800">分享网页</h3>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -62,7 +62,7 @@ const ShareQRCodeModal: React.FC<ShareQRCodeModalProps> = ({ isOpen, onClose, pr
               </div>
               <button
                 onClick={handleCopy}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
                   copied 
                     ? 'bg-green-500 text-white shadow-sm' 
                     : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'

@@ -247,7 +247,7 @@ export default function AdminDashboard() {
                             <button
                                 onClick={sendAnnouncement}
                                 disabled={announcementSending}
-                                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 disabled:opacity-50 transition"
+                                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 disabled:opacity-50 transition cursor-pointer"
                             >
                                 {announcementSending ? '发送中' : '发布'}
                             </button>
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
                 <h3 className="text-lg font-bold text-gray-800">最近访问记录</h3>
                 <button 
                   onClick={() => navigate('/admin/visit-logs')}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
                 >
                   查看全部
                 </button>

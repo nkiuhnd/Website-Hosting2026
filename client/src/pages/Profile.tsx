@@ -159,7 +159,7 @@ export default function Profile() {
           </h1>
           <button 
             onClick={() => navigate('/dashboard')}
-            className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded bg-white border border-gray-200 shadow-sm hover:bg-gray-50 transition"
+            className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded bg-white border border-gray-200 shadow-sm hover:bg-gray-50 transition cursor-pointer"
           >
             返回控制台
           </button>
@@ -268,7 +268,7 @@ export default function Profile() {
                                 <button 
                                     type="submit" 
                                     disabled={passLoading}
-                                    className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors h-[38px] mt-auto"
+                                    className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors h-[38px] mt-auto cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     {passLoading ? '...' : '修改密码'}
                                 </button>
@@ -348,7 +348,7 @@ export default function Profile() {
                                             href={project.siteUrl} 
                                             target="_blank" 
                                             rel="noopener noreferrer" 
-                                            className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-0.5 w-full"
+                                            className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-0.5 w-full cursor-pointer"
                                             title={project.siteUrl}
                                         >
                                             <span className="truncate flex-1 min-w-0">{project.siteUrl}</span>
@@ -379,7 +379,7 @@ export default function Profile() {
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button 
                                         onClick={() => setSelectedProject({ id: project.id, name: project.name })}
-                                        className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors text-xs"
+                                        className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors text-xs cursor-pointer"
                                     >
                                         查看详情
                                     </button>
@@ -402,7 +402,7 @@ export default function Profile() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <button 
                 onClick={() => setShowLoginLogs(!showLoginLogs)}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left cursor-pointer"
             >
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">
                     <Activity size={18} className="text-gray-500" /> 最近登录记录

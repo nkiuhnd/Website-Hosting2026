@@ -83,7 +83,7 @@ export default function ProjectVisitLogsModal({ isOpen, onClose, projectId, proj
             <h3 className="text-xl font-bold text-gray-900">访问日志详情</h3>
             <p className="text-sm text-gray-500 mt-1">项目: {projectName}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500">
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 cursor-pointer">
             <X size={20} />
           </button>
         </div>
@@ -160,7 +160,7 @@ export default function ProjectVisitLogsModal({ isOpen, onClose, projectId, proj
                 <button
                     onClick={() => fetchLogs(page - 1)}
                     disabled={page === 1 || loading}
-                    className="p-2 border rounded bg-white disabled:opacity-50 hover:bg-gray-50 transition-colors"
+                    className="p-2 border rounded bg-white disabled:opacity-50 hover:bg-gray-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
                 >
                     <ChevronLeft size={16} />
                 </button>
@@ -170,7 +170,7 @@ export default function ProjectVisitLogsModal({ isOpen, onClose, projectId, proj
                 <button
                     onClick={() => fetchLogs(page + 1)}
                     disabled={page >= totalPages || loading}
-                    className="p-2 border rounded bg-white disabled:opacity-50 hover:bg-gray-50 transition-colors"
+                    className="p-2 border rounded bg-white disabled:opacity-50 hover:bg-gray-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
                 >
                     <ChevronRight size={16} />
                 </button>

@@ -165,14 +165,14 @@ export default function AdminProjects() {
             {userIdFilter && (
                <span className="ml-4 text-sm font-normal bg-blue-100 text-blue-800 px-3 py-1 rounded-full inline-flex items-center gap-2">
                  {t('admin.filtered_by_user')}: {userIdFilter.substring(0, 8)}...
-                 <button onClick={clearUserFilter} className="hover:text-blue-900"><X size={14} /></button>
+                 <button onClick={clearUserFilter} className="hover:text-blue-900 cursor-pointer"><X size={14} /></button>
                </span>
             )}
           </h2>
           <div className="flex gap-2">
             <button
                 onClick={exportData}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2 cursor-pointer"
             >
                 <FolderOpen size={18} />
                 导出数据
@@ -295,14 +295,14 @@ export default function AdminProjects() {
                     href={project.siteUrl || `http://localhost:4000/sites/${project.user.username}/${project.name}${project.entryFile && project.entryFile !== 'index.html' ? '/' + project.entryFile : ''}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-900"
+                    className="text-blue-600 hover:text-blue-900 cursor-pointer"
                     title={t('dashboard.visit_site')}
                   >
                     <ExternalLink size={18} />
                   </a>
                   <button 
                     onClick={() => toggleStatus(project.id, project.status)}
-                    className={`${project.status === 'ACTIVE' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                    className={`${project.status === 'ACTIVE' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} cursor-pointer`}
                     title={project.status === 'ACTIVE' ? t('admin.disable_project') : t('admin.enable_project')}
                   >
                     {project.status === 'ACTIVE' ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -329,7 +329,7 @@ export default function AdminProjects() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
             >
               上一页
             </button>
@@ -339,7 +339,7 @@ export default function AdminProjects() {
             <button
               onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
               disabled={page >= Math.ceil(total / pageSize)}
-              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-1 border rounded bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
             >
               下一页
             </button>

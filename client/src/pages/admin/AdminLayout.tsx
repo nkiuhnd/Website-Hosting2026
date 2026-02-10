@@ -21,19 +21,19 @@ export default function AdminLayout() {
           <h1 className="text-xl font-bold">{t('common.admin_panel')}</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          <Link to="/admin" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition">
+          <Link to="/admin" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition cursor-pointer">
             <LayoutDashboard size={20} /> {t('common.dashboard')}
           </Link>
-          <Link to="/admin/users" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition">
+          <Link to="/admin/users" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition cursor-pointer">
             <Users size={20} /> {t('common.users')}
           </Link>
-          <Link to="/admin/projects" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition">
+          <Link to="/admin/projects" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition cursor-pointer">
             <FileText size={20} /> {t('common.projects')}
           </Link>
-          <Link to="/admin/reports" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition">
+          <Link to="/admin/reports" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition cursor-pointer">
             <AlertTriangle size={20} /> 违规举报
           </Link>
-          <Link to="/admin/messages" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition">
+          <Link to="/admin/messages" className="flex items-center gap-3 p-3 rounded hover:bg-gray-800 transition cursor-pointer">
             <Mail size={20} /> 站内信
           </Link>
         </nav>
@@ -41,7 +41,7 @@ export default function AdminLayout() {
           <div className="px-3">
              <LanguageSwitcher />
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-3 p-3 w-full text-red-400 hover:bg-gray-800 rounded transition">
+          <button onClick={handleLogout} className="flex items-center gap-3 p-3 w-full text-red-400 hover:bg-gray-800 rounded transition cursor-pointer">
             <LogOut size={20} /> {t('common.logout')}
           </button>
         </div>

@@ -95,7 +95,7 @@ export default function AdminReports() {
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setActiveTab('PENDING')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
             activeTab === 'PENDING'
               ? 'bg-blue-600 text-white'
               : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -105,7 +105,7 @@ export default function AdminReports() {
         </button>
         <button
           onClick={() => setActiveTab('ARCHIVED')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
             activeTab === 'ARCHIVED'
               ? 'bg-blue-600 text-white'
               : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -142,7 +142,7 @@ export default function AdminReports() {
                     <span className="text-xs text-gray-400">{new Date(report.createdAt).toLocaleString()}</span>
                   </div>
                   <div className="text-sm text-gray-900 font-medium mb-1">{report.content}</div>
-                  <a href={report.targetUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1">
+                  <a href={report.targetUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 cursor-pointer">
                     {report.targetUrl} <ExternalLink size={10} />
                   </a>
                 </td>
@@ -166,7 +166,7 @@ export default function AdminReports() {
                                </span>
                                <button 
                                  onClick={() => banUser(report.user!.id)}
-                                 className="text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded hover:bg-red-100 transition-colors"
+                                 className="text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded hover:bg-red-100 transition-colors cursor-pointer"
                                >
                                  封禁账号
                                </button>
@@ -189,13 +189,13 @@ export default function AdminReports() {
                       <>
                         <button 
                            onClick={() => handleStatusChange(report.id, 'HANDLED')}
-                           className="bg-red-50 text-red-600 px-3 py-1 rounded text-xs hover:bg-red-100 border border-red-200"
+                           className="bg-red-50 text-red-600 px-3 py-1 rounded text-xs hover:bg-red-100 border border-red-200 cursor-pointer"
                         >
                           确认违规(封禁)
                         </button>
                         <button 
                            onClick={() => handleStatusChange(report.id, 'DISMISSED')}
-                           className="bg-gray-50 text-gray-600 px-3 py-1 rounded text-xs hover:bg-gray-100 border border-gray-200"
+                           className="bg-gray-50 text-gray-600 px-3 py-1 rounded text-xs hover:bg-gray-100 border border-gray-200 cursor-pointer"
                         >
                           忽略举报
                         </button>

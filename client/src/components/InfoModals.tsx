@@ -204,7 +204,7 @@ export const ContactModal: React.FC<ModalProps> = (props) => {
           <span className="font-mono text-gray-800 font-medium select-all">{email}</span>
           <button
             onClick={handleCopy}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
               copied 
                 ? 'bg-green-100 text-green-700' 
                 : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900 shadow-sm'

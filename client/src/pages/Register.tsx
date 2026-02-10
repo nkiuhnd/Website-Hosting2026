@@ -248,9 +248,9 @@ const Register = () => {
         <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
 
         <div className="mt-4 text-center text-sm text-gray-600">
-          已有账号？ <Link to="/login" className="text-blue-600 hover:underline">{t('common.login')}</Link>
+          已有账号？ <Link to="/login" className="text-blue-600 hover:underline cursor-pointer">{t('common.login')}</Link>
           <span className="mx-2">|</span>
-          <Link to="/forgot" className="text-blue-600 hover:underline">忘记密码？</Link>
+          <Link to="/forgot" className="text-blue-600 hover:underline cursor-pointer">忘记密码？</Link>
         </div>
       </div>
     </div>

@@ -153,7 +153,7 @@ const ForgotPassword = () => {
                 type="button"
                 onClick={handleSendCode}
                 disabled={countdown > 0}
-                className="px-3 py-2 bg-blue-600 text-white text-sm rounded disabled:bg-gray-400 hover:bg-blue-700 transition-colors whitespace-nowrap"
+                className="px-3 py-2 bg-blue-600 text-white text-sm rounded disabled:bg-gray-400 hover:bg-blue-700 transition-colors whitespace-nowrap cursor-pointer"
               >
                 {countdown > 0 ? `${countdown}s` : '获取验证码'}
               </button>
@@ -180,14 +180,14 @@ const ForgotPassword = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium disabled:opacity-70"
+            className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium disabled:opacity-70 cursor-pointer"
           >
             {isSubmitting ? '重置中...' : '确认重置密码'}
           </button>
         </form>
 
         <div className="mt-4 text-center text-sm text-gray-600">
-          记得密码了？ <Link to="/login" className="text-blue-600 hover:underline">立即登录</Link>
+          记得密码了？ <Link to="/login" className="text-blue-600 hover:underline cursor-pointer">立即登录</Link>
         </div>
       </div>
     </div>

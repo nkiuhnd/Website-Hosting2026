@@ -23,7 +23,7 @@ const ZipRulesModal: React.FC<ZipRulesModalProps> = ({ isOpen, onClose, errorMes
           </div>
           <button 
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
           >
             <XCircle className="w-6 h-6" />
           </button>
@@ -100,7 +100,7 @@ const ZipRulesModal: React.FC<ZipRulesModalProps> = ({ isOpen, onClose, errorMes
         <div className="p-6 border-t border-gray-100 flex justify-end bg-gray-50">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+            className="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm cursor-pointer"
           >
             关闭
           </button>

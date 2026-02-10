@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { Heart, MessageSquare, Eye, ExternalLink, ArrowLeft, Send, Monitor, Smartphone} from 'lucide-react';
+import { Heart, MessageSquare, Eye, ExternalLink, ArrowLeft, Send, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 
 interface Comment {
@@ -44,7 +44,6 @@ export default function ProjectDetail() {
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [messageContent, setMessageContent] = useState('');
   const [messageSending, setMessageSending] = useState(false);
-  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
 
   // Use siteUrl from API if available, otherwise construct it (fallback)
   const siteUrl = project?.siteUrl || '';
@@ -143,229 +142,223 @@ export default function ProjectDetail() {
 
   if (!project) return null;
 
-  // 如果后端没有返回siteUrl（不太可能），可以在前端兜底，但现在后端已经修复了
-  // const siteUrl = ...
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/square')} className="text-gray-500 hover:text-gray-900">
+            <button onClick={() => navigate('/square')} className="text-gray-500 hover:text-gray-900 cursor-pointer">
               <ArrowLeft size={20} />
             </button>
             <div>
               <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 {project.name}
-                {/* <span className="text-xs font-normal text-gray-500 px-2 py-0.5 bg-gray-100 rounded-full">v1.0</span> */}
               </h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
-             <a
-               href={siteUrl}
-               target="_blank"
-               rel="noopener noreferrer"
-               className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition shadow-sm hover:shadow"
-             >
-               访问原站 <ExternalLink size={14} />
-             </a>
+            {token && (
+               <button
+                 onClick={() => navigate('/dashboard')}
+                 className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition shadow-sm hover:shadow cursor-pointer"
+               >
+                 控制台 <LayoutDashboard size={14} />
+               </button>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Left Column: Preview & Comments */}
-        <div className="lg:col-span-3 space-y-8">
-          {/* Iframe Preview */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center justify-between gap-2">
-              <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
-              </div>
-              <div className="flex-1 text-center px-4">
-                <div className="bg-white border border-gray-200 rounded px-3 py-0.5 text-xs text-gray-400 inline-block w-full max-w-md truncate">
-                  {siteUrl}
+      <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Left Column: Iframe Preview */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center justify-between gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
                 </div>
-              </div>
-              <div className="flex bg-gray-200 rounded p-0.5">
-                  <button 
-                    onClick={() => setViewMode('desktop')}
-                    className={`p-1 rounded ${viewMode === 'desktop' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                    title="桌面视图"
-                  >
-                    <Monitor size={14} />
-                  </button>
-                  <button 
-                    onClick={() => setViewMode('mobile')}
-                    className={`p-1 rounded ${viewMode === 'mobile' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                    title="移动视图"
-                  >
-                    <Smartphone size={14} />
-                  </button>
-              </div>
-            </div>
-            
-            <div className="relative w-full bg-gray-100 overflow-hidden" style={{ height: '700px' }}>
-               <iframe 
-                 src={siteUrl} 
-                 className={`border-0 transition-all duration-300 ${viewMode === 'desktop' ? 'w-[142.8%] h-[142.8%] transform scale-70 origin-top-left' : 'w-full h-full'}`}
-                 title="Project Preview"
-                 sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-               />
-            </div>
-            
-            {/* Action Bar Below Frame */}
-            <div className="bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={handleLike}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border ${project.isLiked ? 'bg-pink-50 border-pink-200 text-pink-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        <Heart size={20} className={project.isLiked ? 'fill-pink-600' : ''} />
-                        <span className="font-medium">{project.isLiked ? '已赞' : '点赞'}</span>
-                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs ml-1">{project._count.likes}</span>
-                    </button>
-                    
-                    {/* <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-                        <Share2 size={20} />
-                        <span className="font-medium">分享</span>
-                    </button> */}
-                </div>
-                
-                <div className="text-sm text-gray-500">
-                    <span className="mr-4">访问量: {project.visitCount}</span>
-                </div>
-            </div>
-          </div>
-
-          {/* Comments */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <MessageSquare size={20} /> 评论 ({project._count.comments})
-            </h2>
-            
-            {/* Comment Form */}
-            {token ? (
-              <form onSubmit={handleComment} className="mb-8">
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
-                    {username?.substring(0, 1).toUpperCase()}
+                <div className="flex-1 text-center px-4">
+                  <div className="bg-white border border-gray-200 rounded px-3 py-0.5 text-xs text-gray-400 inline-block w-full max-w-md truncate">
+                    {siteUrl}
                   </div>
-                  <div className="flex-1">
-                    <textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="写下你的想法..."
-                      className="w-full border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none resize-none min-h-[100px]"
-                    />
-                    <div className="mt-2 flex justify-end">
+                </div>
+                <div className="w-16"></div> {/* Spacer for symmetry */}
+              </div>
+              
+              <div className="relative w-full bg-gray-100 overflow-hidden h-[600px] flex items-center justify-center">
+                 <iframe 
+                   src={siteUrl} 
+                   className="border-0 bg-white w-full h-full"
+                   title="Project Preview"
+                   sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                 />
+              </div>
+              
+              {/* Action Bar Below Frame */}
+              <div className="bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
                       <button
-                        type="submit"
-                        disabled={submittingComment || !newComment.trim()}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 transition"
+                          onClick={handleLike}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border cursor-pointer ${project.isLiked ? 'bg-pink-50 border-pink-200 text-pink-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                       >
-                        {submittingComment ? '发送中...' : '发表评论'}
+                          <Heart size={20} className={project.isLiked ? 'fill-pink-600' : ''} />
+                          <span className="font-medium">{project.isLiked ? '已赞' : '点赞'}</span>
+                          <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs ml-1">{project._count.likes}</span>
                       </button>
-                    </div>
-                  </div>
-                </div>
-              </form>
-            ) : (
-              <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500 mb-8">
-                请 <button onClick={() => navigate('/login')} className="text-blue-600 hover:underline">登录</button> 后发表评论
-              </div>
-            )}
 
-            {/* Comment List */}
-            <div className="space-y-6">
-              {comments.length === 0 ? (
-                <div className="text-center text-gray-400 py-4">暂无评论，快来抢沙发吧！</div>
-              ) : (
-                comments.map(comment => (
-                  <div key={comment.id} className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold shrink-0">
-                      {comment.user.username.substring(0, 1).toUpperCase()}
+                      {/* Contact Author Button */}
+                      {token && username !== project.user.username && (
+                          <button
+                              onClick={() => setMessageModalOpen(true)}
+                              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+                          >
+                              <Send size={20} />
+                              <span className="font-medium">联系作者</span>
+                          </button>
+                      )}
+                      {!token && (
+                          <button
+                              onClick={() => navigate('/login')}
+                              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+                          >
+                              <Send size={20} />
+                              <span className="font-medium">联系作者</span>
+                          </button>
+                      )}
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                      <span className="text-sm text-gray-500">访问量: {project.visitCount}</span>
+                      <a
+                          href={siteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition shadow-sm hover:shadow cursor-pointer"
+                      >
+                          访问原站 <ExternalLink size={14} />
+                      </a>
+                  </div>
+              </div>
+            </div>
+
+            {/* Comments Section (Below Iframe) */}
+            <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <MessageSquare size={20} /> 评论 ({project._count.comments})
+              </h2>
+              
+              {/* Comment Form */}
+              {token ? (
+                <form onSubmit={handleComment} className="mb-8">
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
+                      {username?.substring(0, 1).toUpperCase()}
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-gray-900">{comment.user.username}</span>
-                        <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleString()}</span>
+                      <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="写下你的想法..."
+                        className="w-full border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none resize-none min-h-[100px]"
+                      />
+                      <div className="mt-2 flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={submittingComment || !newComment.trim()}
+                          className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
+                        >
+                          {submittingComment ? '发送中...' : '发表评论'}
+                        </button>
                       </div>
-                      <p className="text-gray-600 text-sm leading-relaxed">{comment.content}</p>
                     </div>
                   </div>
-                ))
+                </form>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500 mb-8">
+                  请 <button onClick={() => navigate('/login')} className="text-blue-600 hover:underline">登录</button> 后发表评论
+                </div>
               )}
+
+              {/* Comment List */}
+              <div className="space-y-6">
+                {comments.length === 0 ? (
+                  <div className="text-center text-gray-400 py-4">暂无评论，快来抢沙发吧！</div>
+                ) : (
+                  comments.map(comment => (
+                    <div key={comment.id} className="flex gap-4">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold shrink-0">
+                        {comment.user.username.substring(0, 1).toUpperCase()}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-gray-900">{comment.user.username}</span>
+                          <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleString()}</span>
+                        </div>
+                        <p className="text-gray-600 text-sm leading-relaxed">{comment.content}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Column: Sidebar */}
-        <div className="space-y-6">
-          {/* Author Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">关于作者</h3>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                {project.user.username.substring(0, 1).toUpperCase()}
+          {/* Right Column: Sidebar (Info Card) */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
+              {/* Author Section */}
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">关于作者</h3>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                    {project.user.username.substring(0, 1).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-bold text-lg text-gray-900">{project.user.username}</div>
+                    <div className="text-xs text-gray-500">已加入 {Math.floor(Math.random() * 100) + 10} 天</div>
+                  </div>
+                </div>
+                
+                {!token && (
+                   <button
+                     onClick={() => navigate('/login')}
+                     className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer"
+                   >
+                     <Send size={16} /> 登录后联系作者
+                   </button>
+                )}
               </div>
+
+              <hr className="border-gray-100 my-6" />
+
+              {/* Project Info Section */}
               <div>
-                <div className="font-bold text-lg text-gray-900">{project.user.username}</div>
-                <div className="text-xs text-gray-500">已加入 {Math.floor(Math.random() * 100) + 10} 天</div>
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">项目信息</h3>
+                <div className="space-y-4">
+                   <div>
+                     <div className="text-xs text-gray-500 mb-1">发布时间</div>
+                     <div className="text-sm text-gray-900">{new Date(project.createdAt).toLocaleDateString()}</div>
+                   </div>
+                   <div>
+                     <div className="text-xs text-gray-500 mb-1">简介</div>
+                     <div className="text-sm text-gray-600 leading-relaxed">
+                       {project.description || '作者很懒，没有写简介'}
+                     </div>
+                   </div>
+                   <div>
+                     <div className="text-xs text-gray-500 mb-1">统计</div>
+                     <div className="flex gap-4 text-sm text-gray-600">
+                       <span className="flex items-center gap-1"><Eye size={14}/> {project.visitCount}</span>
+                       <span className="flex items-center gap-1"><Heart size={14}/> {project._count.likes}</span>
+                       <span className="flex items-center gap-1"><MessageSquare size={14}/> {project._count.comments}</span>
+                     </div>
+                   </div>
+                </div>
               </div>
-            </div>
-            
-            {token && username !== project.user.username && (
-              <button
-                onClick={() => setMessageModalOpen(true)}
-                className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-              >
-                <Send size={16} /> 联系作者
-              </button>
-            )}
-            
-            {token && username === project.user.username && (
-               <div className="w-full text-center py-2 text-sm text-gray-500 bg-gray-50 rounded-lg border border-gray-100">
-                  这是你的项目
-               </div>
-            )}
-
-            {!token && (
-               <button
-                 onClick={() => navigate('/login')}
-                 className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-               >
-                 <Send size={16} /> 登录后联系作者
-               </button>
-            )}
-          </div>
-
-          {/* Project Info */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">项目信息</h3>
-            <div className="space-y-4">
-               <div>
-                 <div className="text-xs text-gray-500 mb-1">发布时间</div>
-                 <div className="text-sm text-gray-900">{new Date(project.createdAt).toLocaleDateString()}</div>
-               </div>
-               <div>
-                 <div className="text-xs text-gray-500 mb-1">简介</div>
-                 <div className="text-sm text-gray-600 leading-relaxed">
-                   {project.description || '作者很懒，没有写简介'}
-                 </div>
-               </div>
-               <div>
-                 <div className="text-xs text-gray-500 mb-1">统计</div>
-                 <div className="flex gap-4 text-sm text-gray-600">
-                   <span className="flex items-center gap-1"><Eye size={14}/> {project.visitCount}</span>
-                   <span className="flex items-center gap-1"><Heart size={14}/> {project._count.likes}</span>
-                   <span className="flex items-center gap-1"><MessageSquare size={14}/> {project._count.comments}</span>
-                 </div>
-               </div>
             </div>
           </div>
         </div>
@@ -385,14 +378,14 @@ export default function ProjectDetail() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setMessageModalOpen(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition cursor-pointer"
               >
                 取消
               </button>
               <button
                 onClick={handleSendMessage}
                 disabled={messageSending || !messageContent.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
               >
                 {messageSending ? '发送中...' : '发送'}
               </button>

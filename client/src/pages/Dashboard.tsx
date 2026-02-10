@@ -327,7 +327,7 @@ export default function Dashboard() {
           <div className="relative">
             <button 
               onClick={() => setShowMessages(!showMessages)}
-              className="p-2 text-gray-600 hover:text-blue-600 transition relative"
+              className="p-2 text-gray-600 hover:text-blue-600 transition relative cursor-pointer"
               title="通知"
             >
               <Bell size={20} />
@@ -343,7 +343,7 @@ export default function Dashboard() {
                 <div className="p-3 border-b border-gray-100 flex justify-between items-center">
                   <h3 className="font-bold text-gray-800 text-sm">系统通知</h3>
                   {unreadSystemCount > 0 && (
-                    <button onClick={markAllReadSystem} className="text-xs text-blue-600 hover:underline">全部已读</button>
+                    <button onClick={markAllReadSystem} className="text-xs text-blue-600 hover:underline cursor-pointer">全部已读</button>
                   )}
                 </div>
                 <div className="max-h-96 overflow-y-auto">
@@ -355,7 +355,7 @@ export default function Dashboard() {
                     systemMessages.map(msg => (
                       <div 
                         key={msg.id} 
-                        className={`p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition ${!msg.read ? 'bg-blue-50/30' : ''}`}
+                        className={`p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition cursor-pointer ${!msg.read ? 'bg-blue-50/30' : ''}`}
                         onClick={() => openMessageDetail(msg)}
                       >
                         <div className="flex justify-between items-start mb-1">
@@ -375,7 +375,7 @@ export default function Dashboard() {
           <div className="relative">
             <button
               onClick={() => setShowInbox(!showInbox)}
-              className="text-blue-600 hover:text-blue-700 transition text-sm relative"
+              className="text-blue-600 hover:text-blue-700 transition text-sm relative cursor-pointer"
             >
               站内信
               {unreadUserCount > 0 && (
@@ -394,12 +394,12 @@ export default function Dashboard() {
                         setMessageFeedback(null);
                         setShowMessageModal(true);
                       }}
-                      className="text-xs text-blue-600 hover:underline"
+                      className="text-xs text-blue-600 hover:underline cursor-pointer"
                     >
                       写站内信
                     </button>
                     {unreadUserCount > 0 && (
-                      <button onClick={markAllReadUser} className="text-xs text-blue-600 hover:underline">全部已读</button>
+                      <button onClick={markAllReadUser} className="text-xs text-blue-600 hover:underline cursor-pointer">全部已读</button>
                     )}
                   </div>
                 </div>
@@ -412,7 +412,7 @@ export default function Dashboard() {
                     userMessages.map(msg => (
                       <div 
                         key={msg.id} 
-                        className={`p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition ${!msg.read ? 'bg-blue-50/30' : ''}`}
+                        className={`p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition cursor-pointer ${!msg.read ? 'bg-blue-50/30' : ''}`}
                         onClick={() => openMessageDetail(msg)}
                       >
                         <div className="flex justify-between items-start mb-1">
@@ -430,11 +430,11 @@ export default function Dashboard() {
           </div>
 
           <span className="text-gray-600 hidden md:inline">{t('common.welcome')}, <strong>{username}</strong></span>
-          <button onClick={() => navigate('/profile')} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition" title="个人中心">
+          <button onClick={() => navigate('/profile')} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition cursor-pointer" title="个人中心">
             <User size={18} /> <span className="hidden md:inline">个人中心</span>
           </button>
           <div className="h-4 w-px bg-gray-300 mx-1 hidden md:block"></div>
-          <button onClick={logout} className="flex items-center gap-2 text-red-600 hover:text-red-700 transition" title={t('common.logout')}>
+          <button onClick={logout} className="flex items-center gap-2 text-red-600 hover:text-red-700 transition cursor-pointer" title={t('common.logout')}>
             <LogOut size={18} /> <span className="hidden md:inline">{t('common.logout')}</span>
           </button>
         </div>
@@ -447,7 +447,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-800">站内信</h2>
               <button
                 onClick={() => setShowMessageModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 ✕
               </button>
@@ -503,7 +503,7 @@ export default function Dashboard() {
               <button
                 onClick={onSendMessage}
                 disabled={messageSending}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 transition"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 transition cursor-pointer disabled:cursor-not-allowed"
               >
                 {messageSending ? '发送中...' : '发送'}
               </button>
@@ -527,7 +527,7 @@ export default function Dashboard() {
                   setShowMessageDetail(false);
                   setActiveMessage(null);
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 ✕
               </button>
@@ -540,14 +540,14 @@ export default function Dashboard() {
               {activeMessage.type === 'user' && (
                 <button
                   onClick={() => replyToMessage(activeMessage)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition cursor-pointer"
                 >
                   回复
                 </button>
               )}
               <button
                 onClick={() => deleteMessage(activeMessage.id)}
-                className="border border-red-300 text-red-600 px-4 py-2 rounded hover:bg-red-50 transition"
+                className="border border-red-300 text-red-600 px-4 py-2 rounded hover:bg-red-50 transition cursor-pointer"
               >
                 删除
               </button>
@@ -556,7 +556,7 @@ export default function Dashboard() {
                   setShowMessageDetail(false);
                   setActiveMessage(null);
                 }}
-                className="border border-gray-200 px-4 py-2 rounded hover:bg-gray-50 transition"
+                className="border border-gray-200 px-4 py-2 rounded hover:bg-gray-50 transition cursor-pointer"
               >
                 关闭
               </button>
@@ -593,13 +593,13 @@ export default function Dashboard() {
                 type="file"
                 accept=".html,.zip"
                 {...register('file', { required: true })}
-                className="border p-2 rounded w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="border p-2 rounded w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer cursor-pointer"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 transition w-full md:w-auto whitespace-nowrap"
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 transition w-full md:w-auto whitespace-nowrap cursor-pointer disabled:cursor-not-allowed"
             >
               {loading ? t('dashboard.uploading') : t('dashboard.upload')}
             </button>
@@ -637,14 +637,14 @@ export default function Dashboard() {
             <div className="flex bg-white rounded-lg border border-gray-200 p-1">
               <button
                 onClick={() => toggleViewMode('grid')}
-                className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                className={`p-2 rounded cursor-pointer ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
                 title="Grid View"
               >
                 <LayoutGrid size={20} />
               </button>
               <button
                 onClick={() => toggleViewMode('list')}
-                className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                className={`p-2 rounded cursor-pointer ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
                 title="List View"
               >
                 <List size={20} />
@@ -681,15 +681,15 @@ export default function Dashboard() {
                   <div className="flex items-center gap-1">
                     <button 
                       onClick={() => setShareModalData({ url: project.siteUrl || '', name: project.name })}
-                      className="text-gray-300 hover:text-indigo-600 transition p-1"
+                      className="text-gray-300 hover:text-indigo-600 transition p-1 cursor-pointer"
                       title="分享二维码"
                     >
                       <QrCode size={18} />
                     </button>
-                    <button onClick={() => onDownload(project.id, project.name)} className="text-gray-300 hover:text-blue-500 transition p-1" title={t('common.download')}>
+                    <button onClick={() => onDownload(project.id, project.name)} className="text-gray-300 hover:text-blue-500 transition p-1 cursor-pointer" title={t('common.download')}>
                       <Download size={18} />
                     </button>
-                    <button onClick={() => onDelete(project.id)} className="text-gray-300 hover:text-red-500 transition p-1" title={t('common.delete')}>
+                    <button onClick={() => onDelete(project.id)} className="text-gray-300 hover:text-red-500 transition p-1 cursor-pointer" title={t('common.delete')}>
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -703,7 +703,7 @@ export default function Dashboard() {
                     </span>
                     <button
                       onClick={() => togglePublic(project.id, project.isPublic)}
-                      className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition ${project.isPublic ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition cursor-pointer ${project.isPublic ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                       title={project.isPublic ? '已公开到广场' : '私有项目'}
                     >
                       <Globe size={12} />
@@ -714,7 +714,7 @@ export default function Dashboard() {
                         href={`/square/${project.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                         title="在广场中查看"
                       >
                         广场视角 <ExternalLink size={10} />
@@ -725,7 +725,7 @@ export default function Dashboard() {
                     href={project.siteUrl || `http://localhost:4000/sites/${username}/${project.name}${project.entryFile && project.entryFile !== 'index.html' ? '/' + project.entryFile : ''}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                    className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                   >
                     {t('dashboard.visit_site')} <ExternalLink size={14} />
                   </a>
@@ -774,7 +774,7 @@ export default function Dashboard() {
                         <div className="flex items-center justify-end gap-3">
                           <button
                             onClick={() => togglePublic(project.id, project.isPublic)}
-                            className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition ${project.isPublic ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                            className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition cursor-pointer ${project.isPublic ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                             title={project.isPublic ? '已公开到广场' : '私有项目'}
                           >
                             <Globe size={12} />
@@ -785,7 +785,7 @@ export default function Dashboard() {
                               href={`/square/${project.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                               title="在广场中查看"
                             >
                               广场视角 <ExternalLink size={10} />
@@ -795,21 +795,21 @@ export default function Dashboard() {
                             href={project.siteUrl || `http://localhost:4000/sites/${username}/${project.name}${project.entryFile && project.entryFile !== 'index.html' ? '/' + project.entryFile : ''}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-blue-600 hover:text-blue-900 cursor-pointer"
                             title={t('dashboard.visit_site')}
                           >
                             <ExternalLink size={18} />
                           </a>
                           <button 
                             onClick={() => onDownload(project.id, project.name)} 
-                            className="text-gray-400 hover:text-blue-600"
+                            className="text-gray-400 hover:text-blue-600 cursor-pointer"
                             title={t('common.download')}
                           >
                             <Download size={18} />
                           </button>
                           <button 
                             onClick={() => onDelete(project.id)} 
-                            className="text-gray-400 hover:text-red-600"
+                            className="text-gray-400 hover:text-red-600 cursor-pointer"
                             title={t('common.delete')}
                           >
                             <Trash2 size={18} />
