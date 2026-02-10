@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { Heart, MessageSquare, Eye, ExternalLink, ArrowLeft, Send } from 'lucide-react';
+import { Heart, MessageSquare, Eye, ExternalLink, ArrowLeft, Send, Monitor, Smartphone} from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 
 interface Comment {
@@ -44,6 +44,7 @@ export default function ProjectDetail() {
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [messageContent, setMessageContent] = useState('');
   const [messageSending, setMessageSending] = useState(false);
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
 
   // Use siteUrl from API if available, otherwise construct it (fallback)
   const siteUrl = project?.siteUrl || '';
@@ -126,7 +127,7 @@ export default function ProjectDetail() {
       setMessageModalOpen(false);
       setMessageContent('');
     } catch (err) {
-      alert('发送失败，请重试');
+      alert('发送失败，请登陆。');
     } finally {
       setMessageSending(false);
     }
@@ -149,7 +150,7 @@ export default function ProjectDetail() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate('/square')} className="text-gray-500 hover:text-gray-900">
               <ArrowLeft size={20} />
@@ -162,13 +163,6 @@ export default function ProjectDetail() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-             <button
-               onClick={handleLike}
-               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition ${project.isLiked ? 'bg-pink-50 text-pink-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-             >
-               <Heart size={16} className={project.isLiked ? 'fill-pink-600' : ''} />
-               {project._count.likes}
-             </button>
              <a
                href={siteUrl}
                target="_blank"
@@ -181,31 +175,70 @@ export default function ProjectDetail() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Left Column: Preview & Comments */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-3 space-y-8">
           {/* Iframe Preview */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center gap-2">
+            <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center justify-between gap-2">
               <div className="flex gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
               </div>
-              <div className="flex-1 text-center">
+              <div className="flex-1 text-center px-4">
                 <div className="bg-white border border-gray-200 rounded px-3 py-0.5 text-xs text-gray-400 inline-block w-full max-w-md truncate">
                   {siteUrl}
                 </div>
               </div>
+              <div className="flex bg-gray-200 rounded p-0.5">
+                  <button 
+                    onClick={() => setViewMode('desktop')}
+                    className={`p-1 rounded ${viewMode === 'desktop' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    title="桌面视图"
+                  >
+                    <Monitor size={14} />
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('mobile')}
+                    className={`p-1 rounded ${viewMode === 'mobile' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    title="移动视图"
+                  >
+                    <Smartphone size={14} />
+                  </button>
+              </div>
             </div>
-            <div className="relative aspect-video w-full bg-white">
+            
+            <div className="relative w-full bg-gray-100 overflow-hidden" style={{ height: '700px' }}>
                <iframe 
                  src={siteUrl} 
-                 className="w-full h-full border-0"
+                 className={`border-0 transition-all duration-300 ${viewMode === 'desktop' ? 'w-[142.8%] h-[142.8%] transform scale-70 origin-top-left' : 'w-full h-full'}`}
                  title="Project Preview"
                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                />
-               {/* Overlay for interaction blocking if needed, but we want it interactive */}
+            </div>
+            
+            {/* Action Bar Below Frame */}
+            <div className="bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={handleLike}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border ${project.isLiked ? 'bg-pink-50 border-pink-200 text-pink-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    >
+                        <Heart size={20} className={project.isLiked ? 'fill-pink-600' : ''} />
+                        <span className="font-medium">{project.isLiked ? '已赞' : '点赞'}</span>
+                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs ml-1">{project._count.likes}</span>
+                    </button>
+                    
+                    {/* <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                        <Share2 size={20} />
+                        <span className="font-medium">分享</span>
+                    </button> */}
+                </div>
+                
+                <div className="text-sm text-gray-500">
+                    <span className="mr-4">访问量: {project.visitCount}</span>
+                </div>
             </div>
           </div>
 
@@ -293,6 +326,21 @@ export default function ProjectDetail() {
               >
                 <Send size={16} /> 联系作者
               </button>
+            )}
+            
+            {token && username === project.user.username && (
+               <div className="w-full text-center py-2 text-sm text-gray-500 bg-gray-50 rounded-lg border border-gray-100">
+                  这是你的项目
+               </div>
+            )}
+
+            {!token && (
+               <button
+                 onClick={() => navigate('/login')}
+                 className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+               >
+                 <Send size={16} /> 登录后联系作者
+               </button>
             )}
           </div>
 
