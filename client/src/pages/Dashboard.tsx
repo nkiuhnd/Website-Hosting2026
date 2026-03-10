@@ -126,15 +126,15 @@ export default function Dashboard() {
     }
   };
 
-  const userMessages = messages.filter(m => m.type === 'user');
-  const systemMessages = messages.filter(m => m.type !== 'user');
+  const userMessages = messages.filter(m => m.type === 'user' || m.type === 'appeal');
+  const systemMessages = messages.filter(m => m.type !== 'user' && m.type !== 'appeal');
   const unreadUserCount = userMessages.filter(m => !m.read).length;
   const unreadSystemCount = systemMessages.filter(m => !m.read).length;
 
   const markAllReadUser = async () => {
     try {
       await api.post('/projects/messages/read-all?scope=user');
-      setMessages(prev => prev.map(m => m.type === 'user' ? { ...m, read: true } : m));
+      setMessages(prev => prev.map(m => m.type === 'user' || m.type === 'appeal' ? { ...m, read: true } : m));
     } catch (err) {
       console.error('Failed to mark all user messages as read', err);
     }
@@ -282,13 +282,23 @@ export default function Dashboard() {
           title,
           content
         });
-        setMessageFeedback('站内信已发送');
+        // 弹出确认提示
+        if (confirm('信件已发送，可以在站内信中查看。')) {
+          // 发送成功后关闭窗口并刷新消息列表
+          setShowMessageModal(false);
+          fetchMessages();
+        }
       } else {
         await api.post('/projects/messages/appeal', {
           title,
           content
         });
-        setMessageFeedback('申诉已发送');
+        // 弹出确认提示
+        if (confirm('申诉已提交，可以在站内信中查看处理进度。')) {
+          // 发送成功后关闭窗口并刷新消息列表
+          setShowMessageModal(false);
+          fetchMessages();
+        }
       }
       setMessageContent('');
       setMessageTitle('');
@@ -326,7 +336,10 @@ export default function Dashboard() {
           
           <div className="relative">
             <button 
-              onClick={() => setShowMessages(!showMessages)}
+              onClick={() => {
+                setShowMessages(!showMessages);
+                if (!showMessages) setShowInbox(false);
+              }}
               className="p-2 text-gray-600 hover:text-blue-600 transition relative cursor-pointer"
               title="通知"
             >
@@ -374,7 +387,10 @@ export default function Dashboard() {
 
           <div className="relative">
             <button
-              onClick={() => setShowInbox(!showInbox)}
+              onClick={() => {
+                setShowInbox(!showInbox);
+                if (!showInbox) setShowMessages(false);
+              }}
               className="text-blue-600 hover:text-blue-700 transition text-sm relative cursor-pointer"
             >
               站内信

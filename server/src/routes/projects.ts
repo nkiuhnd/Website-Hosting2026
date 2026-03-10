@@ -555,18 +555,33 @@ router.post('/messages/appeal', authenticateToken, async (req: AuthRequest, res)
         }
 
         const finalTitle = title || '用户申诉';
-        const finalContent = `来自 ${fromUser.username} 的申诉：${content}`;
+        // 在内容中包含发送者的ID，方便管理员回复时使用
+        const finalContent = `来自用户 [${fromUser.username}] (ID: ${fromUser.id}) 的申诉：${content}`;
+        
+        // 给管理员发送申诉消息
+        const adminMessages = admins.map(admin => ({
+            userId: admin.id,
+            title: finalTitle,
+            content: finalContent,
+            type: 'appeal'
+        }));
+        
+        // 给用户自己也发送一条申诉消息，让用户能在站内信中看到
+        const userMessage = {
+            userId: fromUser.id,
+            title: finalTitle,
+            content: `您向管理员发送了申诉：${content}`,
+            type: 'appeal'
+        };
+        
+        // 合并所有消息并创建
         await prisma.message.createMany({
-            data: admins.map(admin => ({
-                userId: admin.id,
-                title: finalTitle,
-                content: finalContent,
-                type: 'appeal'
-            }))
+            data: [...adminMessages, userMessage]
         });
 
-        res.json({ message: '申诉已发送', count: admins.length });
+        res.json({ message: '申诉已发送', count: admins.length + 1 });
     } catch (error) {
+        console.error('Appeal message error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -577,7 +592,16 @@ router.get('/messages/all', authenticateToken, async (req: AuthRequest, res) => 
         const userId = req.user!.id;
         const messages = await prisma.message.findMany({
             where: { userId },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                title: true,
+                content: true,
+                read: true,
+                type: true,
+                createdAt: true,
+                userId: true
+            }
         });
         res.json(messages);
     } catch (error) {
@@ -620,7 +644,7 @@ router.post('/messages/read-all', authenticateToken, async (req: AuthRequest, re
         const scope = String(req.query.scope || '').trim();
         const whereClause: any = { userId, read: false };
         if (scope === 'user') {
-            whereClause.type = 'user';
+            whereClause.type = { in: ['user', 'appeal'] };
         } else if (scope === 'system') {
             whereClause.type = { in: ['system', 'announcement'] };
         } else if (scope) {

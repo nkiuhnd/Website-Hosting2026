@@ -388,6 +388,7 @@ export default function AdminUsers() {
                 <div className="flex items-center">{t('common.username')} <SortIcon columnKey="username" sortKey={sortConfig.key} sortDirection={sortConfig.direction} /></div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">手机号</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">地区</th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('projectCount')}
@@ -429,14 +430,10 @@ export default function AdminUsers() {
                   <div className="text-xs text-gray-500">{user.role}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div className="flex flex-col">
-                     <span>{user.phone || <span className="text-gray-300">-</span>}</span>
-                     <div className="text-xs text-gray-400 mt-1">
-                        {(user.province || user.city) ? `${user.province || ''} ${user.city || ''}` : ''}
-                        {user.school && (user.province || user.city ? ' · ' : '') + user.school}
-                        {!user.province && !user.city && !user.school && <span className="text-gray-300">-</span>}
-                     </div>
-                  </div>
+                  {user.phone || <span className="text-gray-300">-</span>}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {(user.province || user.city) ? `${user.province || ''} ${user.city || ''}` : <span className="text-gray-300">-</span>}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div className="flex items-center gap-2">
@@ -536,57 +533,81 @@ export default function AdminUsers() {
 
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">{t('admin.confirm_delete_user')}</h3>
-            <p className="text-gray-600 mb-6">
-              {t('admin.confirm_delete_warning', 'Are you sure you want to delete this user? This action cannot be undone.')}
-            </p>
-
-            {/* Verification Code Input */}
-            <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('common.verification_code', 'SMS Verification Code')}
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={verifyCode}
-                        onChange={(e) => setVerifyCode(e.target.value)}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                        placeholder="123456"
-                    />
-                    <button
-                        onClick={sendVerificationCode}
-                        disabled={countdown > 0}
-                        className={`px-3 py-2 rounded-md text-sm font-medium cursor-pointer ${
-                            countdown > 0
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                        }`}
-                    >
-                        {countdown > 0 ? `${countdown}s` : (codeSent ? t('common.resend') : t('common.send_code'))}
-                    </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden transform transition-all animate-scale-in">
+            {/* Header with icon */}
+            <div className="bg-gradient-to-r from-red-50 to-red-100 px-6 py-4 border-b border-red-200">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
                 </div>
-                <p className="mt-2 text-xs text-gray-500">
-                    验证码将发送至管理员手机号 (尾号8879)
-                </p>
+                <h3 className="text-xl font-bold text-gray-900">
+                  {t('admin.confirm_delete_user')}
+                </h3>
+              </div>
             </div>
 
-            <div className="flex justify-end gap-3">
+            {/* Content */}
+            <div className="px-6 py-5">
+
+
+              {/* Verification Code Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    短信验证码
+                  </div>
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value)}
+                    maxLength={6}
+                    className="flex-1 rounded-lg border-2 border-gray-200 px-4 py-3 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none"
+                    placeholder="请输入验证码"
+                  />
+                  <button
+                    onClick={sendVerificationCode}
+                    disabled={countdown > 0}
+                    className={`px-4 py-3 rounded-lg text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      countdown > 0
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-md'
+                    }`}
+                  >
+                    {countdown > 0 ? `${countdown}秒后重发` : (codeSent ? '重新发送' : '发送验证码')}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  验证码将发送至管理员手机号 (尾号 8879)
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
               <button
                 onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
+                className="px-5 py-2.5 text-gray-700 bg-white border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 rounded-lg font-medium transition-all cursor-pointer"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={confirmDeleteUser}
                 disabled={!verifyCode}
-                className={`px-4 py-2 rounded-md transition-colors cursor-pointer ${
-                    !verifyCode 
-                    ? 'bg-red-300 text-white cursor-not-allowed'
-                    : 'bg-red-600 text-white hover:bg-red-700'
+                className={`px-5 py-2.5 rounded-lg font-semibold text-white transition-all cursor-pointer shadow-md ${
+                  !verifyCode 
+                  ? 'bg-red-300 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 hover:shadow-lg transform hover:-translate-y-0.5'
                 }`}
               >
                 {t('common.confirm')}

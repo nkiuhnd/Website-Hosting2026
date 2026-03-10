@@ -156,6 +156,38 @@ router.post('/announcements', async (req: Request, res: Response) => {
     }
 });
 
+// Send message to specific user
+router.post('/send-message', async (req: Request, res: Response) => {
+    try {
+        const { userId, title, content, type } = req.body;
+        
+        console.log('Send message request:', { userId, title, type });
+        
+        if (!userId || !content) {
+            return res.status(400).json({ message: 'userId and content are required' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        await prisma.message.create({
+            data: {
+                userId,
+                title: title || '站内信',
+                content,
+                type: type || 'user'
+            }
+        });
+
+        res.json({ message: 'Message sent successfully' });
+    } catch (error) {
+        console.error('Send message error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Get Recent Visits
 router.get('/visit-logs', async (req: Request, res: Response) => {
     try {
@@ -262,7 +294,6 @@ router.get('/users', async (req: Request, res: Response) => {
             whereClause.OR = [
                 { username: { contains: String(search) } },
                 { phone: { contains: String(search) } },
-                { email: { contains: String(search) } },
                 { school: { contains: String(search) } }
             ];
         }
@@ -280,7 +311,7 @@ router.get('/users', async (req: Request, res: Response) => {
         const orderByClause: any = {};
         if (sortBy) {
              // Handling simple fields sorting
-             if (['createdAt', 'lastLoginAt', 'username', 'lastActiveAt'].includes(String(sortBy))) {
+             if (['createdAt', 'lastLoginAt', 'username', 'lastActiveAt', 'school'].includes(String(sortBy))) {
                 orderByClause[String(sortBy)] = order === 'asc' ? 'asc' : 'desc';
              }
         } else {
