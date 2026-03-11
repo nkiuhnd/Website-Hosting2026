@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../prisma';
 import { sendSmsCode, verifySmsCode } from '../utils/sms';
 import { authenticateToken, AuthRequest } from '../middlewares/auth';
+import { getLocationFromIP } from '../utils/ipLocation';
 
 const router = Router();
 const LOCKOUT_THRESHOLD = parseInt(process.env.LOCKOUT_THRESHOLD || '5', 10);
@@ -119,13 +120,18 @@ router.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const userIP = req.ip || req.connection.remoteAddress || '';
+    const { province, city } = await getLocationFromIP(userIP);
 
     // 使用单次创建操作替代先创建后更新，避免潜在的竞态条件
     const user = await prisma.user.create({
       data: {
         username,
         password: hashedPassword,
-        phone
+        phone,
+        province,
+        city
       },
     });
 
@@ -195,6 +201,8 @@ router.post('/login', async (req, res) => {
     // Update lastLoginAt and IP
     const ip = req.ip || '';
     const userAgent = req.headers['user-agent'] || '';
+    
+    const { province, city } = await getLocationFromIP(ip);
 
     await prisma.user.update({
         where: { id: user.id },
@@ -202,7 +210,9 @@ router.post('/login', async (req, res) => {
             lastLoginAt: new Date(), 
             lastLoginIp: String(ip),
             failedLoginAttempts: 0, 
-            lockedUntil: null 
+            lockedUntil: null,
+            ...(province && !user.province ? { province } : {}),
+            ...(city && !user.city ? { city } : {})
         } as any
     });
 

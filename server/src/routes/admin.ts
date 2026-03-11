@@ -60,6 +60,22 @@ router.post('/send-verify-code', async (req: Request, res: Response) => {
     }
 });
 
+// Get User Location Statistics
+router.get('/statistics/location', async (req: Request, res: Response) => {
+    try {
+        const locationStats = await prisma.user.groupBy({
+            by: ['province', 'city'],
+            _count: { id: true },
+            orderBy: { _count: { id: 'desc' } }
+        });
+        
+        res.json(locationStats);
+    } catch (error) {
+        console.error('Get location statistics error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Get Dashboard Stats
 router.get('/stats', async (req: Request, res: Response) => {
     try {

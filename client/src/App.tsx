@@ -12,6 +12,7 @@ import AdminProjects from './pages/admin/AdminProjects';
 import AdminReports from './pages/admin/AdminReports';
 import AdminMessages from './pages/admin/AdminMessages';
 import AdminVisitLogs from './pages/admin/AdminVisitLogs';
+import AdminStatistics from './pages/admin/AdminStatistics';
 import ForgotPassword from './pages/ForgotPassword.tsx';
 import Square from './pages/Square';
 import ProjectDetail from './pages/ProjectDetail';
@@ -68,6 +69,7 @@ function App() {
             <Route path="reports" element={<AdminReports />} />
             <Route path="messages" element={<AdminMessages />} />
             <Route path="visit-logs" element={<AdminVisitLogs />} />
+            <Route path="statistics" element={<AdminStatistics />} />
           </Route>
 
           <Route path="/" element={<Home />} />

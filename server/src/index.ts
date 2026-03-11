@@ -340,7 +340,7 @@ if (fs.existsSync(clientBuildPath)) {
     console.log('To serve the frontend, run "npm run build" in the client directory.');
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
   console.log('Version: 2026-01-15-Fixed-Assets');
 });
