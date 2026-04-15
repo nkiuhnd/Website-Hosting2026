@@ -1,7 +1,8 @@
 services:
   # 应用服务
   web-hosting-platform:
-    image: hanshuai23/web-hosting-platform:latest
+    image: hanshuai23/web-hosting-platform:latest    #原始镜像位置 dockerhub中之前最新的没有错误的。
+    #image: hanshuai23/web-hosting-platform:backup    备份的镜像位置
     volumes:
       - ./server/prisma/production.db:/app/server/prisma/dev_v2.db
       - ./server/prisma/migrations:/app/server/prisma/migrations

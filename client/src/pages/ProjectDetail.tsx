@@ -319,7 +319,6 @@ export default function ProjectDetail() {
                   </div>
                   <div>
                     <div className="font-bold text-lg text-gray-900">{project.user.username}</div>
-                    <div className="text-xs text-gray-500">已加入 {Math.floor(Math.random() * 100) + 10} 天</div>
                   </div>
                 </div>
                 
