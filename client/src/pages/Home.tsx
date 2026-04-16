@@ -3,6 +3,15 @@ import { useAuth } from '../context/useAuth';
 import { useState } from 'react';
 import { AboutModal, DocsModal, PrivacyModal, ContactModal } from '../components/InfoModals';
 
+const WechatFloat = () => (
+  <div className="fixed right-6 top-1/2 -translate-y-1/2 z-40 bg-white p-4 rounded-lg shadow-lg border border-gray-200 flex flex-col items-center">
+    <img src="/logo_foot.png" alt="关注公众号" className="w-24 h-24 mb-2" />
+    <div className="text-xs text-gray-600 text-center">
+      扫码关注公众号<br/>获取更多资讯
+    </div>
+  </div>
+);
+
 const Home = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -22,6 +31,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-indigo-100 selection:text-indigo-700">
+      <WechatFloat />
       {/* Navbar */}
       <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -267,45 +277,47 @@ const Home = () => {
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                title: '秒级部署',
-                desc: '支持 ZIP 压缩包一键上传，后端自动解压并部署。无论是静态 HTML 还是 React/Vue 构建产物，瞬间上线。',
-                icon: (
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                )
-              },
-              {
-                title: '专属子域名',
-                desc: '每个用户拥有独立的二级域名空间（如 username.yunmind.cn），让你的项目拥有专业且易记的访问地址。',
-                icon: (
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                )
-              },
-              {
-                title: '隐私优先',
-                desc: '只有你分享链接的对象才能访问,非常适合内部测试、个人简历或私密项目。',
-                icon: (
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                )
-              }
-            ].map((feature, idx) => (
-              <div key={idx} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-6">
-                  {feature.icon}
+            {
+              [
+                {
+                  title: '秒级部署',
+                  desc: '支持 ZIP 压缩包一键上传，后端自动解压并部署。无论是静态 HTML 还是 React/Vue 构建产物，瞬间上线。',
+                  icon: (
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  )
+                },
+                {
+                  title: '专属子域名',
+                  desc: '每个用户拥有独立的二级域名空间（如 username.yunmind.cn），让你的项目拥有专业且易记的访问地址。',
+                  icon: (
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                  )
+                },
+                {
+                  title: '隐私优先',
+                  desc: '只有你分享链接的对象才能访问,非常适合内部测试、个人简历或私密项目。',
+                  icon: (
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  )
+                }
+              ].map((feature, idx) => (
+                <div key={idx} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-6">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {feature.desc}
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {feature.desc}
-                </p>
-              </div>
-            ))}
+              ))
+            }
           </div>
         </div>
       </section>
@@ -331,23 +343,36 @@ const Home = () => {
 
       {/* Footer */}
       <footer className="bg-gray-50 border-t border-gray-200 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-900 rounded-md flex items-center justify-center">
-              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-gray-900 rounded-md flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span className="font-bold text-gray-900">YunMind</span>
             </div>
-            <span className="font-bold text-gray-900">YunMind</span>
-          </div>
-          <div className="flex gap-8 text-sm text-gray-500">
-            <button onClick={() => setShowAbout(true)} className="hover:text-gray-900 transition-colors cursor-pointer">关于我们</button>
-            <button onClick={() => setShowDocs(true)} className="hover:text-gray-900 transition-colors cursor-pointer">使用文档</button>
-            <button onClick={() => setShowPrivacy(true)} className="hover:text-gray-900 transition-colors cursor-pointer">隐私政策</button>
-            <button onClick={() => setShowContact(true)} className="hover:text-gray-900 transition-colors cursor-pointer">联系支持</button>
-          </div>
-          <div className="text-sm text-gray-400">
-            © 2026 YunMind. All rights reserved.
+            <div className="flex gap-8 text-sm text-gray-500">
+              <button onClick={() => setShowAbout(true)} className="hover:text-gray-900 transition-colors cursor-pointer">关于我们</button>
+              <button onClick={() => setShowDocs(true)} className="hover:text-gray-900 transition-colors cursor-pointer">使用文档</button>
+              <button onClick={() => setShowPrivacy(true)} className="hover:text-gray-900 transition-colors cursor-pointer">隐私政策</button>
+              <button onClick={() => setShowContact(true)} className="hover:text-gray-900 transition-colors cursor-pointer">联系支持</button>
+            </div>
+            <div className="flex flex-col items-center">
+              {/* 暂时注释掉友情链接部分 */}
+              {/* <div className="flex items-center gap-4">
+                <div className="text-sm text-gray-500 flex flex-col justify-center">友情链接，扫码关注：</div>
+                <div className="flex flex-col items-center">
+                  <img src="/qrcode_1.jpg" alt="微信公众号" className="w-20 h-20 mb-2" />
+                  <div className="text-xs text-gray-600">公众号名称</div>
+                </div>
+                <div className="flex flex-col items-center">
+                  <img src="/qrcode_1.jpg" alt="微信公众号" className="w-20 h-20 mb-2" />
+                  <div className="text-xs text-gray-600">公众号名称</div>
+                </div>
+              </div> */}
+            </div>
           </div>
         </div>
       </footer>
